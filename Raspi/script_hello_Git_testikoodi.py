@@ -12,3 +12,5 @@ if x == 1:
     print("x on 1.")
 else:
     print("ei ollut vielakaan yksi")
+    
+#muokkaan tähän nämä rivit
