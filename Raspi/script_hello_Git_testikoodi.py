@@ -5,7 +5,7 @@ if x == 1:
     print("x is 1.")
 else:
     print("ei ollut yksi")
-# Muutokset tehty: x on nyt yksi
+# Muutokset tehty: x on nyt yksi ooo
 x = x - 1
 if x == 1:
     # indented four spaces
