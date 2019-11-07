@@ -1,11 +1,24 @@
 #!/usr/bin/env python3
 
 import paho.mqtt.client as mqtt
+import datetime
+dt = datetime.datetime.now()
+# Add reading sensor data directly from arduino modules, then save them to a file AND send them forward!
 
-# This is the Publisher
+# Open a new sensor "log file" every time we open this program:
+filename = "valvo-log-" + dt.strftime('%Y-%m-%d-%H:%M:%S')
+logfile= open("/home/pi/Valvo/logs/" + filename, "w")
+msg="PLACEHOLDER"
+topic = "raspberry/sensor"
 
 client = mqtt.Client()
 client.connect("172.20.240.54",1883,60)
-client.publish("raspberry/kamera", "exit");
 
+while msg != "exit":
+    msg=input("Insert message you want to send to topic '" + topic + "': " + chr(10))
+    logfile.writelines(msg + "\n")
+    client.publish(topic, msg)
+
+# Close the log file and disconnect from the broker:
+logfile.close
 client.disconnect();
