@@ -1,3 +1,4 @@
-<?php
-echo "I wrote anything to this as the page instructed me to. No php formatting or anything, let's see id it works";
-?>
+<br><br>
+<h2>Welcome to CodeIgniter</h2>
+<br>
+<h3>t. E</h3>
