@@ -1,4 +1,5 @@
 <?php
+#https://www.phptpoint.com/codeigniter-insert-data-database/
 class Hello extends CI_Controller 
 {
 	public function __construct()
