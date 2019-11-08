@@ -35,8 +35,19 @@ class Valvo extends CI_Controller {
          echo $this->table->generate($query);
          echo '</br>';
 
+         echo '</br>';
         
+
+
+
+         
+         # Ladataan kirjastosta hakemistoauttaja ja ladataan kuvia sivulle
+        $this->load->helper('url');
+?>
+        <img src="<?php echo base_url('images/tables_01.jpg'); ?>" />  
+<?php
         }
+# Alihakemisto
 # http://172.20.240.54/index.php/valvo/comments
 
         public function comments()
@@ -45,3 +56,4 @@ class Valvo extends CI_Controller {
                 $this->load->view('footer');
         }
 }
+?>
