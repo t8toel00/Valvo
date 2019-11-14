@@ -8,25 +8,26 @@ import datetime
 
 # Add camera data too.
 
-
-
-def publishToMqtt(topic, msg):
-    
-    # Open a new sensor "log file" every time we open this program.
-    # If the logs directory doesn't exist in the run directory, create one.
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
+if not os.path.exists('logs'):
+    os.mkdir('logs')
     
     dt = datetime.datetime.now()
-    filename = "valvo-log-" + dt.strftime('%Y-%m-%d-%H:%M:%S')
+    filename = "valvo-log-" + dt.strftime('%Y-%m-%d-%H%M%S')
     logfile= open("logs/" + filename, "w")
     logfile.writelines("Valvo mqtt publisher log started.")
 
-    client = mqtt.Client()
-    client.connect("172.20.240.54",1883,60)
+def connectMqtt(addr, port):
+    # Open a new sensor "log file" every time we open this program.
+    # If the logs directory doesn't exist in the run directory, create one.
 
+
+    client = mqtt.Client()
+    client.connect(addr,port,60)
+
+def publishToMqtt(topic):
+    msg = ""
     while msg != "exit":
-        msg=input("Insert message you want to send to topic '" + topic + "': " + chr(10))
+        msg=input("Insert a message to send to the topic '" + topic + "': " + chr(10))
         logfile.writelines(msg + "\n")
         client.publish(topic, msg)
 
