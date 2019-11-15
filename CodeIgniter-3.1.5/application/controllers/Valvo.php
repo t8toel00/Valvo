@@ -14,9 +14,16 @@ class Valvo extends CI_Controller {
                 echo $sql;
                 echo '</br>';
                 echo '</br>';
-
+                
         # Lataa codeigniterin automaattisen taulukko-muotoilun kirjastosta
+
         $this->load->library('table');
+
+        $template = array(
+                'table_open' => '<table border="1" cellpadding="2" cellspacing="1" class="mytable">'
+        );
+        
+        $this->table->set_template($template);        
 
         # Toteutetaan SQL-kyselyt ja sovitetaan arvot taulukkoon 
          $query = $this->db->query('SELECT * FROM Alue');

@@ -1,25 +1,19 @@
 #!/usr/bin/env python3
-# /ubuntu/mqtt/subscriber.py -> suorita: python3 subscriber.py
-# tee viesteistä loki, muotoile ne SQL-komennoiksi ja lähetä ne tietokantaan
 
 import paho.mqtt.client as mqtt
-import MySQLdb
 
 # This is the Subscriber
 
 def on_connect(client, userdata, flags, rc):
   print("Connected with result code "+str(rc))
-  client.subscribe("raspberry/+")
+  client.subscribe("topic/test")
 
 def on_message(client, userdata, msg):
-  #if msg.payload.decode() == "Hello world!":
   x = msg.payload.decode()
   print(x)
-  loki_data = {'x'}
-  print(loki_data, file=open('/home/ubuntu/mqtt/loki.txt'))
-  if x == "exit":
-   client.disconnect()
-  
+  if x == "quit":
+    print("Yes!")
+    client.disconnect()
     
 client = mqtt.Client()
 client.connect("127.0.0.1",1883,60)
