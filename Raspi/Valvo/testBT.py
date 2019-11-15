@@ -19,23 +19,11 @@ def receiveMessages():
   client_sock.close()
   server_sock.close()
 
-def listenToBT(BTMacAddress):
-    port = 1
-    
-    sock.connect((BTMacAddress, port))
-    if sock.connect:
-        print("Connected to: " + BTMacAddress)
-    sock.listen(1)
-    data = sock.recv(1024)
 
 
 
-def sendMessageTo(targetBluetoothMacAddress):
-  port = 1
-  sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
-  sock.connect((targetBluetoothMacAddress, port))
-  sock.send("hello!!")
-  sock.close()
+
+
   
 def lookUpNearbyBluetoothDevices():
   nearby_devices = bluetooth.discover_devices()
@@ -92,3 +80,12 @@ class BTConn():
     
     def change_port(self, new_port):
         self.port = new_port
+    
+    def sendMessageTo(self,targetBluetoothMacAddress):
+        self.sock.send("hello!!")
+        self.sock.close()
+
+    def listenToBT(self,BTMacAddress):
+        self.sock.listen(1)
+        self.data = sock.recv(1024)
+        return self.data
