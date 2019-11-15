@@ -1,0 +1,74 @@
+#include <SoftwareSerial.h>
+SoftwareSerial EEBlue(10, 11); // RX | TX
+
+// Define Trig and Echo pin:
+#define trigPin1 3 // Sensor 1
+#define echoPin1 2 
+#define trigPin2 4 // Sensor 2
+#define echoPin2 5
+
+// Define variables:
+long duration1;
+long duration2;
+int distance1;
+int distance2;
+
+void setup() {
+  // Define inputs and outputs:
+  pinMode(trigPin1, OUTPUT);
+  pinMode(echoPin1, INPUT);
+  pinMode(trigPin2,OUTPUT);
+  pinMode(echoPin2,INPUT);
+  //Begin Serial communication at a baudrate of 9600:
+  Serial.begin(9600);
+  EEBlue.begin(9600); 
+  Serial.println("The bluetooth gates are open.\n Connect to HC-05 from any other bluetooth device with 1234 ");
+  }
+void loop() {
+    // Feed any data from bluetooth to Terminal.
+  if (EEBlue.available())
+    Serial.write(EEBlue.read());
+      // Feed all data from termial to bluetooth
+  if (Serial.available())
+    EEBlue.write(Serial.read());
+  // Clear the trigPin by setting it LOW:
+  
+  digitalWrite(trigPin1, LOW);
+  digitalWrite(trigPin2,LOW);
+  delayMicroseconds(1);
+
+  // Trigger the sensor by setting the trigPin high for 10 microseconds:
+  digitalWrite(trigPin1, HIGH);
+  digitalWrite(trigPin2,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin1, LOW);
+  digitalWrite(trigPin2,LOW);
+  
+  // Read the echoPin, pulseIn() returns the duration (length of the pulse) in microseconds:
+  duration1 = pulseIn(echoPin1, HIGH);
+  duration2 = pulseIn(echoPin2,HIGH);
+  
+  // Calculate the distance:
+  distance1= duration1*0.034/2;
+  distance2= duration2*0.034/2;
+
+  // Print the distance:
+  //Serial.print("Distance1 = ");
+  //Serial.print(distance1);
+  //Serial.print("Distance2 = ");
+  //Serial.print(distance2);
+  
+  {
+  if (distance1 > 100)
+  {  
+    Serial.print("Detected 1") ;
+  }
+  else if (distance2 > 100)
+  {
+   Serial.print("Detected 2");
+  }
+  else { Serial.print(" Normal ");
+  }
+ }
+delay(10);
+}
