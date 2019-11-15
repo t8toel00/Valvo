@@ -1,6 +1,7 @@
     
 #!/usr/bin/env python3
 import bluetooth
+from bluetooth import *
 
 
 def receiveMessages():
@@ -24,18 +25,21 @@ def receiveMessages():
 
 
 
-  
+
 def lookUpNearbyBluetoothDevices():
-  nearby_devices = bluetooth.discover_devices()
-  if len(nearby_devices) !=0:
+    nearby_devices = bluetooth.discover_devices()
+    if len(nearby_devices) !=0:
         print("Devices found: " + chr(10))
         opt = 0
         devicelist = {}
-  for bdaddr in nearby_devices:
+    for bdaddr in nearby_devices:
         opt = opt + 1
         devicelist[str(opt)] = bdaddr
-        print(str(opt) + ") " + str(bluetooth.lookup_name( bdaddr )) + " [" + str(bdaddr) + "]")
-        return devicelist[input("Select a device: ")]
+        print(str(opt) + ") " + str(bluetooth.lookup_name( bdaddr )) + " [" + str(bdaddr) + "]") 
+        #print([_ for _ in find_service(address=bdaddr) if 'RFCOMM' in _['protocol'] ])
+        #print([_ for _ in find_service(address=bdaddr) ])  
+    
+    return devicelist[input("Select a device: ")]
 
 class BTConn():
     def __init__(self):
@@ -63,13 +67,13 @@ class BTConn():
         #self.close()
 
         try:
-            self._socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-            self._socket.connect((self.address, self.port))
+            self.sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+            self.sock.connect((self.address, self.port))
             return True
         except bluetooth.BluetoothError as error:
-            if self._socket is not None:
-                self._socket.close()
-                self._socket = None
+            if self.sock is not None:
+                self.sock.close()
+                self.sock = None
             if suppress_exceptions:
                 print(error)
                 return False
@@ -81,11 +85,14 @@ class BTConn():
     def change_port(self, new_port):
         self.port = new_port
     
-    def sendMessageTo(self,targetBluetoothMacAddress):
+    def sendMessageTo(self,targetAddress,mesg):
         self.sock.send("hello!!")
+    
+    def close(self):
         self.sock.close()
 
-    def listenToBT(self,BTMacAddress):
+    def listenToBT(self):
+        self.sock.bind((self.address,self.port))
         self.sock.listen(1)
-        self.data = sock.recv(1024)
+        self.data = self.sock.recv(1024)
         return self.data

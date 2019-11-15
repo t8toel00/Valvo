@@ -12,10 +12,11 @@ from testBT import *
         
 if not os.path.exists('logs'):
     os.mkdir('logs')
-    dt = datetime.datetime.now()
-    filename = "valvo-log-" + self.dt.strftime('%Y-%m-%d-%H%M%S')
-    logfile= open("logs/" + self.filename, "w")
-    logfile.writelines("Valvo log started.")
+
+dt = datetime.datetime.now()
+filename = "valvo-log-" + dt.strftime('%Y-%m-%d-%H%M%S')
+logfile= open("logs/" + filename, "w")
+logfile.writelines("Valvo log started.")
 
 
 
@@ -33,7 +34,7 @@ if input("Send face data to mqtt?") == "y":
     mqtt_c1.connectMqtt(addr="172.20.240.54",port=1883)
     
     #Publish the data to server and print locally for debug:
-    mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(len(facedata[0])) + "," + str(facedata[1]) + "," + "0")
+    mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
     print("Tunnistus," + str(len(facedata[0])) + "," + str(facedata[1]))
     
     #FORMAT: "table,xxx,xxx,xxx,xxx"
@@ -46,11 +47,29 @@ if input("Send to BT?") == "y":
     # Create new instance of BTConn() class and search for devices.
     connection = BTConn()
     #BTConn().connect(address=lookUpNearbyBluetoothDevices())
-    while BTConn().connect(address=lookUpNearbyBluetoothDevices()) == False:
+    
+    # Get the MAC address of a found device:
+    adr = lookUpNearbyBluetoothDevices()
+
+    # Try to connect and try again if not succesful:
+    while connection.connect(address = adr) == False:
         print("Failed to connect.")
         #print(connection.connect(address=lookUpNearbyBluetoothDevices()))
     print("Connection successful.")
 
+    # Send Handshake:
+    connection.sendMessageTo(targetAddress=adr, mesg="Hello!")
+    
+    recStr = ""
+
+    # Receive data as long as we don't reveice "Exit" //DOESNT WORK ATM
+    #while recStr != "exit":
+    #    recBuffer = connection.listenToBT()
+    #    recStr = str(recBuffer)
+    #    print(recStr)
+
+
+    connection.close()
 
 
 # Close the logfile:
