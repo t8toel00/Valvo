@@ -41,4 +41,5 @@ def snapAndDetect():
            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
         imwrite("snapshots/" + filename + "-detected.jpg",img)
         
-        return faces
+        # Finally, return the amount of faces, timestamp and the trigger source:
+        return faces, dt

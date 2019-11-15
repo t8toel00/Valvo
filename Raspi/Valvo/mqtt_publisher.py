@@ -4,34 +4,34 @@ import os
 
 import paho.mqtt.client as mqtt
 import datetime
-# Add reading sensor data directly from arduino modules, then save them to a file AND send them forward!
 
-# Add camera data too.
-
-if not os.path.exists('logs'):
-    os.mkdir('logs')
-    
-    dt = datetime.datetime.now()
-    filename = "valvo-log-" + dt.strftime('%Y-%m-%d-%H%M%S')
-    logfile= open("logs/" + filename, "w")
-    logfile.writelines("Valvo mqtt publisher log started.")
-
-def connectMqtt(addr, port):
-    # Open a new sensor "log file" every time we open this program.
-    # If the logs directory doesn't exist in the run directory, create one.
+# TO DO: Make this into a class object with class methods.
+# TO DO: Remove logfile from here and switch it into main.py
+class mqtt_conn():
 
 
-    client = mqtt.Client()
-    client.connect(addr,port,60)
+    def __init__(self):
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+        self.dt = datetime.datetime.now()
+        self.filename = "valvo-log-" + self.dt.strftime('%Y-%m-%d-%H%M%S')
+        self.logfile= open("logs/" + self.filename, "w")
+        self.logfile.writelines("Valvo mqtt publisher log started.")
 
-def publishToMqtt(topic):
-    msg = ""
-    while msg != "exit":
-        msg=input("Insert a message to send to the topic '" + topic + "': " + chr(10))
-        logfile.writelines(msg + "\n")
-        client.publish(topic, msg)
+    def connectMqtt(self, addr, port):
+        # Open a new sensor "log file" every time we open this program.
+        # If the logs directory doesn't exist in the run directory, create one.
+        self.client = mqtt.Client()
+        self.client.connect(addr,port,60)
 
-# Close the log file and disconnect from the broker:
-def closeMqtt():
-    logfile.close
-    client.disconnect();
+    def publishToMqtt(self, topic, msg):
+        
+        #while msg != "exit":
+            #msg=input("Insert a message to send to the topic '" + topic + "': " + chr(10))
+        self.logfile.writelines(msg + "\n")
+        self.client.publish(topic, msg)
+
+    # Close the log file and disconnect from the broker:
+    def closeMqtt():
+        self.logfile.close
+        self.client.disconnect();
