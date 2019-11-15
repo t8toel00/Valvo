@@ -4,6 +4,7 @@
 import cv2 
 from cv2 import *
 import os
+import datetime
 
 cam = VideoCapture(0)
 cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
@@ -22,6 +23,8 @@ def snapAndDetect():
     # Snaps a picture when called and tries to detect faces.
     # Returns the amount of faces and possibly the coordinates.
     s, img = cam.read()
+    dt = datetime.datetime.now()
+    filename = "snapshot-" + dt.strftime('%Y-%m-%d-%H%M%S')
     if s:
         imwrite("snapshots/filename.jpg",img)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -35,8 +38,8 @@ def snapAndDetect():
         
         print("Found {0} faces!".format(len(faces)))
         for (x, y, w, h) in faces:
-            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
-        imwrite("snapshots/filename-detected.jpg",img)
-
-
-    
+           cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        imwrite("snapshots/" + filename + "-detected.jpg",img)
+        
+        # Finally, return the amount of faces, timestamp and the trigger source:
+        return faces, dt
