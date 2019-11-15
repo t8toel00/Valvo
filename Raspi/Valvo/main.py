@@ -23,6 +23,8 @@ if input("Send face data to mqtt?") == "y":
     mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(len(facedata[0])) + "," + str(facedata[1]))
     print("Tunnistus," + str(len(facedata[0])) + "," + str(facedata[1]))
     #FORMAT: "table,xxx,xxx,xxx,xxx"
+    #Format for camera data: "'Tunnistus',n,yyyy-mm-dd hh:mm:ss.ms"
+    #   ^where n = number of faces
     #dateformat: yyyy-mm-dd hh:mm:ss.ms
 
 #sock = bluetooth.BluetoothSocket( bluetooth.RFCOMM )
