@@ -1,0 +1,14 @@
+CREATE DATABASE valvo;
+SHOW DATABASES;
+USE valvo;
+SET SQL_SAFE_UPDATES = 0;
+SHOW TABLES;
+SELECT * FROM Alue;
+SELECT * FROM Tunnistus;
+SELECT * FROM Arduino1;
+SELECT * FROM Arduino2;
+SELECT TIME(k_aika) FROM Tunnistus;
+SELECT DATE(k_aika) FROM Tunnistus;
+DELETE FROM Arduino1 WHERE a1_etaisyys = '11';  
+INSERT INTO Arduino1 (a1_aika, a1_suunta, a1_aikaero, a1_etaisyys) VALUES ('2019-11-12 10:16:11.999777', 'tulo', '555', '12');
+INSERT INTO Arduino1 (a1_aika, a1_suunta, a1_aikaero, a1_etaisyys) VALUES ('2019-11-12 10:16:11.955999', 'tulo', '555', '19');
