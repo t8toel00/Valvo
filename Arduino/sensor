@@ -1,0 +1,36 @@
+const int pwPin1 = 2;
+const int pwPin2 = 3;
+long pulse1, sensor1;
+long pulse2, sensor2;
+
+void setup () {
+  Serial.begin(9600);
+  pinMode(pwPin1, INPUT);
+  pinMode(pwPin2, INPUT);
+}
+
+void read_sensor(){
+  pulse1 = pulseIn(pwPin1, HIGH);
+  pulse2 = pulseIn(pwPin2, HIGH);
+  sensor1 = pulse1/147;
+  sensor2 = pulse2/147;
+}
+
+//This section of code is if you want to print the range readings to your computer too remove this from the code put /* before the code section and */ after the code
+void printall(){         
+  Serial.print("S1");
+  Serial.print(" ");
+  Serial.print(sensor1);
+  Serial.println(" ");
+  Serial.print("S2");
+  Serial.print(" ");
+  Serial.print(sensor2);
+  Serial.println(" ");
+  
+}
+
+void loop () {
+  read_sensor();
+  printall();
+  delay(50); // This delay time changes by 50 for every sensor in the chain.  For 5 sensors this will be 250
+}
