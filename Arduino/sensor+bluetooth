@@ -22,7 +22,7 @@ void setup() {
   //Begin Serial communication at a baudrate of 9600:
   Serial.begin(9600);
   EEBlue.begin(9600); 
-  Serial.println("The bluetooth gates are open.\n Connect to HC-05 from any other bluetooth device with 1234 ");
+  Serial.println("Bluetooth UP.\n Connect to HC-05 from any other bluetooth device with 1234 ");
   }
 void loop() {
     // Feed any data from bluetooth to Terminal.
@@ -35,8 +35,7 @@ void loop() {
   
   digitalWrite(trigPin1, LOW);
   digitalWrite(trigPin2,LOW);
-  delayMicroseconds(1);
-
+  
   // Trigger the sensor by setting the trigPin high for 10 microseconds:
   digitalWrite(trigPin1, HIGH);
   digitalWrite(trigPin2,HIGH);
@@ -53,21 +52,21 @@ void loop() {
   distance2= duration2*0.034/2;
 
   // Print the distance:
-  //Serial.print("Distance1 = ");
-  //Serial.print(distance1);
+  Serial.print("Distance1 = ");
+  Serial.print(distance1);
   //Serial.print("Distance2 = ");
   //Serial.print(distance2);
   
   {
-  if (distance1 > 100)
+  if (distance1 > 100) // If sensor "detects" movement/change in sensor
   {  
-    Serial.print("Detected 1") ;
+    Serial.print(" Detected in Sensor 1\n") ;
   }
   else if (distance2 > 100)
   {
-   Serial.print("Detected 2");
+   Serial.print(" Detected in Sensor 2");
   }
-  else { Serial.print(" Normal ");
+  else { Serial.print(" Normal \n");  // sensor state normal 
   }
  }
 delay(10);
