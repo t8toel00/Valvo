@@ -4,7 +4,6 @@
 
 import os
 import serial
-import time
 import datetime
 from mqtt_publisher import *
 from detect_faces import snapAndDetect
@@ -19,42 +18,6 @@ dt = datetime.datetime.now()
 filename = "valvo-log-" + dt.strftime('%Y-%m-%d-%H%M%S')
 logfile= open("logs/" + filename, "w")
 logfile.writelines("Valvo log started.")
-
-# Create new instance of mqtt_conn class and connect to broker
-mqtt_c1 = mqtt_conn()
-mqtt_c1.connectMqtt(addr="172.20.240.54",port=1883)
-
-
-def createConnection(adr):
-
-    # Create new instance of BTConn() class and search for devices.
-    connection = BTConn()
-    # Get the MAC address of a found device:
-    #adr = lookUpNearbyBluetoothDevices()
-
-    print("Connecting to device " + adr)
-    # Try to connect and try again if not succesful:
-    attempt = 0
-    connected = False
-    while connected == False:
-        while connection.connect(address = adr) == False and attempt < 5:
-            print("Failed to connect. Retrying...")
-            attempt = attempt + 1
-            time.sleep(.500)
-
-        if attempt < 5:
-            print("Connection successful to device " + adr)
-            connected == True
-            return connection
-        else:
-            print("Unable to connect to '" + adr + "'. Please choose one manually.")
-            print("Now scanning for nearby devices...")
-            adr = lookUpNearbyBluetoothDevices()
-            attempt = 0
-
-
-#while True:
-
 
 if input("Take picture (y/n)?") == "y":
     
@@ -105,17 +68,9 @@ if input("Send to BT?") == "y":
         print(recBuffer)
         #print(recStr)
         
-# Then establish bluetooth connections:
-arduino1 = createConnection("98:D3:31:B2:B8:D4") #kim-jong-il
-arduino2 = createConnection("98:D3:31:20:40:BB") #kim-jong-un
 
-# Now we can enter the main loop:
 
-while True:
-    
-
-arduino1.close()
-arduino2.close()
+    connection.close()
 
 # Close the logfile:
 logfile.close

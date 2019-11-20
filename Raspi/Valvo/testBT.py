@@ -2,6 +2,7 @@
 #!/usr/bin/env python3
 import bluetooth
 from bluetooth import *
+import subprocess
 
 
 def receiveMessages():
@@ -14,16 +15,11 @@ def receiveMessages():
   client_sock,address = server_sock.accept()
   print ("Accepted connection from " + str(address))
   
-  data = client_sock.recv(1024)
+  data = client_sock.recv(512)
   print ("received [%s]" % data)
   
   client_sock.close()
   server_sock.close()
-
-
-
-
-
 
 
 def lookUpNearbyBluetoothDevices():
@@ -32,12 +28,15 @@ def lookUpNearbyBluetoothDevices():
         print("Devices found: " + chr(10))
         opt = 0
         devicelist = {}
-    for bdaddr in nearby_devices:
-        opt = opt + 1
-        devicelist[str(opt)] = bdaddr
-        print(str(opt) + ") " + str(bluetooth.lookup_name( bdaddr )) + " [" + str(bdaddr) + "]") 
-        #print([_ for _ in find_service(address=bdaddr) if 'RFCOMM' in _['protocol'] ])
-        #print([_ for _ in find_service(address=bdaddr) ])  
+        for bdaddr in nearby_devices:
+            opt = opt + 1
+            devicelist[str(opt)] = bdaddr
+            print(str(opt) + ") " + str(bluetooth.lookup_name( bdaddr )) + " [" + str(bdaddr) + "]") 
+            #print([_ for _ in find_service(address=bdaddr) if 'RFCOMM' in _['protocol'] ])
+            #print([_ for _ in find_service(address=bdaddr) ])  
+    else:
+        print("No devices found")
+        return ""
     
     return devicelist[input("Select a device: ")]
 
@@ -71,6 +70,9 @@ class BTConn():
             self.sock.connect((self.address, self.port))
             return True
         except bluetooth.BluetoothError as error:
+            if str(error) == "(111, 'Connection refused')":
+                #self.pin = str(input("Please enter a pin for the device: "))
+                print("Connection refused, has the device been paired?")
             if self.sock is not None:
                 self.sock.close()
                 self.sock = None
@@ -85,14 +87,41 @@ class BTConn():
     def change_port(self, new_port):
         self.port = new_port
     
-    def sendMessageTo(self,targetAddress,mesg):
+    def sendMessageTo(self,mesg):
         self.sock.send("hello!!")
     
     def close(self):
         self.sock.close()
 
     def listenToBT(self):
-        self.sock.bind((self.address,self.port))
-        self.sock.listen(1)
-        self.data = self.sock.recv(1024)
-        return self.data
+        #self.sock.bind(("",2))
+        #self.sock.listen(1)
+        try:
+            self.data = self.sock.recv(512)
+            return self.data
+        except bluetooth.bluetoothError as error:
+            return error
+        
+        
+            
+
+class BTServerConn():
+
+    def __init__(self):
+        self.server_sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+        self.port = 2
+
+    def bind(self):
+        self.server_sock.bind(("", self.port))
+        self.server_sock.listen(1)
+        self.client_sock,address = self.server_sock.accept()
+    
+    def receive(self):
+        data = self.client_sock.recv(1024)
+        return data
+        
+
+    def close(self):
+        self.sock.shutdown()
+        self.sock.close()
+        
