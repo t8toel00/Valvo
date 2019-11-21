@@ -60,24 +60,24 @@ def createConnection(adr):
             connected == True
             return connection
         else:
-            print("Unable to connect to '" + adr + "'. Please choose one manually.")
-            print("Now scanning for nearby devices...")
-            adr = lookUpNearbyBluetoothDevices()
+            #print("Unable to connect to '" + adr + "'. Please choose one manually.")
+            #print("Now scanning for nearby devices...")
+            #adr = lookUpNearbyBluetoothDevices()
             attempt = 0
 
         
 # Then establish bluetooth connections:
-arduino1 = createConnection("98:D3:31:B2:B8:D4") #kim-jong-il
-arduino2 = createConnection("98:D3:31:20:40:BB") #kim-jong-un
-#arduino2 = createConnection("98:D3:31:B2:B9:4C") #HC-06
+arduinoA = createConnection("98:D3:31:B2:B8:D4") #kim-jong-il
+arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
+#arduinoB = createConnection("98:D3:31:B2:B9:4C") #HC-06
 
 # Set up polling for bluetooth:
 poller = select.poll()
-poller.register(arduino1.sock, READ_WRITE)
-poller.register(arduino2.sock, READ_WRITE)
+poller.register(arduinoA.sock, READ_WRITE)
+poller.register(arduinoB.sock, READ_WRITE)
 
 # Map file descriptors to socket objects
-fd_to_socket = { arduino1.sock.fileno(): arduino1.sock, arduino2.sock.fileno(): arduino2.sock,
+fd_to_socket = { arduinoA.sock.fileno(): arduinoA.sock, arduinoB.sock.fileno(): arduinoB.sock,
                }
 
 # Now we can enter the main loop:
@@ -85,6 +85,19 @@ fd_to_socket = { arduino1.sock.fileno(): arduino1.sock, arduino2.sock.fileno(): 
 while True:
     # Wait for at least one of the sockets to be ready for processing
     #print >>sys.stderr, '\nwaiting for the next event'
+    try:
+        arduinoA.sock.getpeername()
+    except bluetooth.btcommon.BluetoothError as err:
+        print(err)
+        arduinoA = createConnection("98:D3:31:B2:B8:D4")
+    
+    try:
+        arduinoB.sock.getpeername()
+    except bluetooth.btcommon.BluetoothError as err:
+        print(err)
+        arduinoB = createConnection("98:D3:31:20:40:BB")
+        pass
+
     events = poller.poll(TIMEOUT)
 
     for fd, flag in events:
@@ -113,11 +126,12 @@ while True:
                     #Format for camera data: "'Tunnistus',n,yyyy-mm-dd hh:mm:ss.ms,sensor"
                     #   ^where n = number of faces, sensor = '0'
                     #dateformat: yyyy-mm-dd hh:mm:ss.ms
-            else:
+
+            #else:
                 # Interpret empty result as closed connection
                 # print >>sys.stderr, 'closing', client_address, 'after reading no data'
                 # Stop listening for input on the connection
-                poller.unregister(s)
+                #poller.unregister(s)
                 #s.close()
                 
                 # Remove message queue
@@ -126,8 +140,8 @@ while True:
     time.sleep(0.500)
 
 
-arduino1.close()
-arduino2.close()
+arduinoA.close()
+arduinoB.close()
 
 # Close the logfile:
 logfile.close

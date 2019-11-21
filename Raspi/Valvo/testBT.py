@@ -5,23 +5,6 @@ from bluetooth import *
 import subprocess
 
 
-def receiveMessages():
-  server_sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
-  
-  port = 1
-  server_sock.bind(("",port))
-  server_sock.listen(1)
-  
-  client_sock,address = server_sock.accept()
-  print ("Accepted connection from " + str(address))
-  
-  data = client_sock.recv(512)
-  print ("received [%s]" % data)
-  
-  client_sock.close()
-  server_sock.close()
-
-
 def lookUpNearbyBluetoothDevices():
     nearby_devices = bluetooth.discover_devices()
     if len(nearby_devices) !=0:
