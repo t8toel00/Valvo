@@ -6,9 +6,7 @@ from cv2 import *
 import os
 import datetime
 
-cam = VideoCapture(0)
-cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
 
 
 if not os.path.exists('snapshots'):
@@ -20,13 +18,17 @@ cascPath = "haarcascade_frontalface_default.xml"
 faceCascade = cv2.CascadeClassifier(cascPath)
 
 def snapAndDetect():
+
+    cam = VideoCapture(0)
+    cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     # Snaps a picture when called and tries to detect faces.
     # Returns the amount of faces and possibly the coordinates.
     s, img = cam.read()
     dt = datetime.datetime.now()
     filename = "snapshot-" + dt.strftime('%Y-%m-%d-%H%M%S')
     if s:
-        imwrite("snapshots/filename.jpg",img)
+        #imwrite("snapshots/filename.jpg",img)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         faces = faceCascade.detectMultiScale(
             gray,
@@ -41,5 +43,9 @@ def snapAndDetect():
            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
         imwrite("snapshots/" + filename + "-detected.jpg",img)
         
+        # Release the video stream:
+        cam.release()
+
         # Finally, return the amount of faces, timestamp and the trigger source:
         return faces, dt
+    
