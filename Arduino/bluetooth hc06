@@ -1,1 +1,68 @@
+#include <SoftwareSerial.h>
+SoftwareSerial EEBlue(10, 11); // RX | TX
 
+const int pwPin1 = 2;
+const int pwPin2 = 3;
+
+long pulse1, sensor1;
+long pulse2, sensor2;
+long sensoryht,objekti;
+
+void setup () 
+{
+  Serial.begin(9600);
+  pinMode(pwPin1, INPUT);
+  delay(1);
+  pinMode(pwPin2, INPUT);
+  EEBlue.begin(9600); 
+  Serial.println("Bluetooth UP pincode:9898");
+
+}
+
+void read_sensor()
+{
+  pulse1 = pulseIn(pwPin1, HIGH);
+  pulse2 = pulseIn(pwPin2, HIGH);
+  sensor1 = pulse1 / 29 / 2;
+  sensor2 = pulse2 / 29 / 2;
+  sensoryht=sensor1+sensor2;
+  objekti=265-sensoryht;
+}
+void printall()
+{           
+  Serial.print("\nSensor1=");
+  Serial.print(sensor1);
+  Serial.print("\nSensor2=");
+  Serial.print(sensor2);
+  Serial.print("\nLeveys=");
+  Serial.print(objekti);
+  Serial.print("\n");
+}
+void bluetooth()
+{
+  if (EEBlue.available())
+    Serial.print(EEBlue.read());
+      // Feed all data from termial to bluetooth
+  if (Serial.available())
+    EEBlue.write(Serial.read());
+  // Clear the trigPin by setting it LOW:
+}
+void bluetoothtrig()
+{
+  EEBlue.write("DPR Start");
+  EEBlue.write(objekti);
+  EEBlue.write("DPR END");
+}
+
+void loop () 
+{
+  bluetooth();
+  read_sensor();
+  if(objekti<260)
+  {
+  printall();
+  bluetoothtrig();
+  }
+  else{read_sensor();}
+  delay(50);
+}
