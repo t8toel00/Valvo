@@ -12,6 +12,7 @@ void setup ()
 {
   Serial.begin(9600);
   pinMode(pwPin1, INPUT);
+  delay(1);
   pinMode(pwPin2, INPUT);
   EEBlue.begin(9600); 
   Serial.println("Bluetooth UP pincode:9898");
@@ -22,8 +23,8 @@ void read_sensor()
 {
   pulse1 = pulseIn(pwPin1, HIGH);
   pulse2 = pulseIn(pwPin2, HIGH);
-  sensor1 = pulse1*0.034/2;
-  sensor2 = pulse2*0.034/2;
+  sensor1 = pulse1 / 29 / 2;
+  sensor2 = pulse2 / 29 / 2;
   sensoryht=sensor1+sensor2;
   objekti=265-sensoryht;
 }
@@ -63,5 +64,5 @@ void loop ()
   bluetoothtrig();
   }
   else{read_sensor();}
-  delay(500);
+  delay(50);
 }
