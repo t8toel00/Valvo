@@ -7,20 +7,22 @@ import paho.mqtt.client as mqtt
 class mqtt_conn():
 
 
-    #def __init__(self):
-
-    def connectMqtt(self, addr, port):
-        # Open a new sensor "log file" every time we open this program.
-        # If the logs directory doesn't exist in the run directory, create one.
+    def __init__(self):
         self.client = mqtt.Client()
-        self.client.connect(addr,port,60)
 
-    def publishToMqtt(self, topic, msg):
-        
-        #while msg != "exit":
-            #msg=input("Insert a message to send to the topic '" + topic + "': " + chr(10))
-        self.client.publish(topic, msg)
+    def connectMqtt(self, addr, port, topic, qos=0):
+        self.client.connect(addr,port,60)
+        self.client.subscribe(topic, qos)
+        self.client.loop_start()
+
+    def publishToMqtt(self, topic, msg, qos=0):
+        self.client.publish(topic, msg, qos)
+
+    #def subscribeToMqtt(self, topic, qos=0):
+    #    try:
+    #        self.client.subscribe(topic, qos)
 
     # Close the log file and disconnect from the broker:
     def closeMqtt():
+        self.client.loop_stop()
         self.client.disconnect();
