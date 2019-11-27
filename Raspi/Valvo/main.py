@@ -15,6 +15,31 @@ import queue
 import sys
 import pysftp        
 
+def on_connect(client, userdata, flags, rc):
+    print("Connected mqtt with result code " + str(rc))
+
+def on_message(client, userdata, msg):
+    print("Received message from mqtt: ", msg.payload)
+    detectAndSend()
+
+def detectAndSend():
+
+    facedata = camera1.snapAndDetect()
+    endTime = time.time()
+    # Print the number of faces and date:
+    print(facedata[1], " Found ", len(facedata[0]), " faces.")
+    print("Time between trigger and finish: " + str(endTime-startTime))
+    
+    #Publish the data to server and print locally for debug:
+    mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
+    print("Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
+    try:
+        #Push snapshot to server:
+        sftp.put("snapshots/lastshot.jpg", "/home/ubuntu/www/CodeIgniter/images/" + str(camera1.filename))
+    except:
+        print("Error pushing file over sftp.")
+        pass
+
 # Commonly used flag sets for poll()
 READ_ONLY = select.POLLIN | select.POLLPRI | select.POLLHUP | select.POLLERR
 READ_WRITE = READ_ONLY | select.POLLOUT
@@ -39,7 +64,11 @@ logfile.writelines(datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S') + "Valvo 
 logfile.writelines("Connecting to mqtt broker at address '" + mqttAddress + "' port " + str(mqttPort))
 print("Connecting to mqtt broker at address '" + mqttAddress + "' port " + str(mqttPort))
 mqtt_c1 = mqtt_conn()
-mqtt_c1.connectMqtt(addr=mqttAddress,port=mqttPort)
+mqtt_c1.client.on_connect = on_connect
+mqtt_c1.client.on_message = on_message
+
+# Finally connect to mqtt broker and subscribe to a topic:
+mqtt_c1.connectMqtt(addr=mqttAddress,port=mqttPort,topic="server/takephoto")
 
 # Create an sftp connection to the server:
 print("Connecting to sftp: " + sshUsername + "@" + sshAddress)
@@ -77,7 +106,6 @@ def createConnection(adr):
             #adr = lookUpNearbyBluetoothDevices()
             attempt = 0
 
-        
 # Then establish bluetooth connections:
 arduinoA = createConnection("98:D3:31:B2:B8:D4") #kim-jong-il
 arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
@@ -96,7 +124,6 @@ fd_to_socket = { arduinoA.sock.fileno(): arduinoA.sock, arduinoB.sock.fileno(): 
 camera1 = cvCam()
 
 # Now we can enter the main loop:
-
 while True:
     # Wait for at least one of the sockets to be ready for processing
     #print >>sys.stderr, '\nwaiting for the next event'
@@ -110,13 +137,16 @@ while True:
     try:
         arduinoB.sock.getpeername()
     except bluetooth.btcommon.BluetoothError as err:
-        logfile.writeline(err)
+        logfile.writelines(err)
         print(err)
         arduinoB = createConnection("98:D3:31:20:40:BB")
         pass
 
     events = poller.poll(TIMEOUT)
+
+    # Grab frame but don't save it (to keep buffer running):
     camera1.cam.grab()
+
     for fd, flag in events:
         # Retrieve the actual socket from its file descriptor
         s = fd_to_socket[fd]
@@ -126,28 +156,14 @@ while True:
 
             if data:
                 # A readable client socket has data
-                #message_queues[s].put(data)
                 startTime = time.time()
                 logfile.writelines("Received the following from '" + str(s.getpeername()) + "'.")
                 logfile.writelines(str(data))
                 print("Received the following from '" + str(s.getpeername()) + "'.")
                 print(data)
 
-                if data:
-                    facedata = camera1.snapAndDetect()
-                    endTime = time.time()
-                    # Print the number of faces and date:
-                    print(facedata[1], " Found ", len(facedata[0]), " faces.")
-                    print("Time between trigger and finish: " + str(endTime-startTime))
-                    
-                    #Publish the data to server and print locally for debug:
-                    mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
-                    print("Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
-                    try:
-                        sftp.put("snapshots/lastshot.jpg", "/home/ubuntu/www/CodeIgniter/images/lastshot.jpg")
-                    except:
-                        print("Error pushing file over sftp.")
-                        pass
+                detectAndSend()
+
                     #FORMAT: "table,xxx,xxx,xxx,xxx"
                     #Format for camera data: "'Tunnistus',n,yyyy-mm-dd hh:mm:ss.ms,sensor"
                     #   ^where n = number of faces, sensor = '0'
@@ -170,6 +186,8 @@ while True:
 
 arduinoA.close()
 arduinoB.close()
+
+mqtt_c1.closeMqtt()
 
 # Close the logfile:
 logfile.close

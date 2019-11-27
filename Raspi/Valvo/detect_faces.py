@@ -31,7 +31,7 @@ class cvCam():
         # Returns the amount of faces and possibly the coordinates.
         self.s, self.img = self.cam.read()
         self.dt = datetime.datetime.now()
-        self.filename = "snapshot-" + self.dt.strftime('%Y-%m-%d-%H%M%S')
+        self.filename = "snapshot-" + self.dt.strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
         if self.s:
             #imwrite("snapshots/filename.jpg",img)
             self.gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
@@ -46,7 +46,7 @@ class cvCam():
             #print("Found {0} faces!".format(len(self.faces)))
             for (x, y, w, h) in self.faces:
                 cv2.rectangle(self.img, (x, y), (x+w, y+h), (0, 255, 0), 2)
-            imwrite("snapshots/" + self.filename + "-detected.jpg",self.img)
+            imwrite("snapshots/" + self.filename,self.img)
             imwrite("snapshots/lastshot.jpg",self.img)
             
             # Release the video stream:
