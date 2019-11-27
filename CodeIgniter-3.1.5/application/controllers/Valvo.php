@@ -11,6 +11,7 @@ class Valvo extends CI_Controller {
   <title>Valvontadata</title>
   <h1>Valvontadata</h1>
 </head>
+<meta http-equiv="refresh" content="30">
 <br>
 
 <div class="topnav">
@@ -51,8 +52,21 @@ class Valvo extends CI_Controller {
 </style>
 
 <p>Latest image: </p>
- <img src="http://172.20.240.54/images/lastshot.jpg" width="960" height="540" />
- <br>
+
+<?php 
+$dir2 = "images/";
+$images2 = glob($dir2 . "*.{gif,png,jpg,jpeg}", GLOB_BRACE); //formats to look for
+foreach ($images2 as $f) {
+    # store the image name
+    $list[] = $f;
+}
+
+sort($list);                    # sort is oldest to newest,
+
+$newimg = array_pop($list);   # Newest
+echo "<img src='/$newimg' width='960' height='540'><br><br>";
+echo array_pop($list);   # 2nd newest
+?>
 
 <?php
 
@@ -61,8 +75,6 @@ class Valvo extends CI_Controller {
             # Lataa codeigniterin DB-kirjaston, login asetukset ovat \application\config\database.php
             $this->load->database();
                 echo ' ';
-                echo '</br>';
-                echo '<a href="http://172.20.240.54/index.php/valvo/latest">Latest data</a>';
                 echo '</br>';
                 echo '</br>';
                 
@@ -77,11 +89,34 @@ class Valvo extends CI_Controller {
         $this->table->set_template($template);        
 
         # Toteutetaan SQL-kyselyt ja sovitetaan arvot taulukkoon 
-
-         $query = $this->db->query('SELECT * FROM Alue');
+         echo '<p>Total detections per hour: </p>';
+         $query = $this->db->query('SELECT sum(ihmiset_kpl), sum(odotettu_kpl), date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 48 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
          echo $this->table->generate($query);
          echo '</br>';
 
+         foreach ($query->result_array() as $tunniste_ihmiset)
+         {
+          echo '</br>';
+          echo $tunniste_ihmiset['sum(ihmiset_kpl)'];
+          echo '</br>';
+         }
+
+         foreach ($query->result_array() as $tunniste_odotettu)
+         {
+          echo '</br>';
+          echo $tunniste_odotettu['sum(odotettu_kpl)'];
+          echo '</br>';
+         }
+
+         foreach ($query->result_array() as $tunniste_date)
+         {
+          echo '</br>';
+          echo $tunniste_date['datecreated'];
+          echo '</br>';
+         }
+
+
+         echo '</br>';
          $query = $this->db->query('SELECT * FROM Tunnistus ORDER BY k_aika DESC');
          echo $this->table->generate($query);
          echo '</br>';
@@ -125,27 +160,14 @@ th {
 # ------------------------------------------------------------------------------------------- 
 # LUO ERILLINEN DB TAULUKKO JA TRIGGAA DATA VAIKKA TUNTEIHIN; YNNÄÄ HAVAINNOT NIIHIN
 
+#fiksaa alla olevat arvot toimiviksi graafille
+
  $dataPoints1 = array(
-         array("label"=> "2012019-11-12 16:05:11.1120", "y"=> 2),
-         array("label"=> "2019-11-12 14:39:11.111", "y"=> 1),
-         array("label"=> "2019-11-12 14:39:11.111", "y"=> 1),
-         array("label"=> "2019-11-12 14:39:11.111", "y"=> 2),
-         array("label"=> "2019-11-12 14:39:11.111", "y"=> 2),
-         array("label"=> "2019-11-12 14:39:11.111", "y"=> 2),
-         array("label"=> "2019-11-12 14:39:11.111", "y"=> 2),
-         array("label"=> "2019-11-12 14:39:11.111", "y"=> 2)
-         
+         "label"=> $tunniste_date['datecreated'], "y"=> $tunniste_ihmiset['sum(ihmiset_kpl)']
  );
  $dataPoints2 = array(
-        array("label"=> "2012019-11-12 16:05:11.1120", "y"=> 2),
-        array("label"=> "2019-11-12 14:39:11.111", "y"=> 1),
-        array("label"=> "2019-11-12 14:39:11.111", "y"=> 2),
-        array("label"=> "2019-11-12 14:39:11.111", "y"=> 1),
-        array("label"=> "2019-11-12 14:39:11.111", "y"=> 2),
-        array("label"=> "2019-11-12 14:39:11.111", "y"=> 2),
-        array("label"=> "2019-11-12 14:39:11.111", "y"=> 2),
-        array("label"=> "2019-11-12 14:39:11.111", "y"=> 2)
- );
+  "label"=> $tunniste_date, "y"=> $tunniste_odotettu
+);
          
  ?>
  
@@ -169,6 +191,7 @@ th {
          },
          data: [{
                  type: "area",
+                 fillOpacity: .2,
                  name: "to North",
                  indexLabel: "{y}",
                  yValueFormatString: "#0.##",
@@ -176,6 +199,7 @@ th {
                  dataPoints: <?php echo json_encode($dataPoints1, JSON_NUMERIC_CHECK); ?>
          },{
                  type: "area",
+                 fillOpacity: .2,
                  name: "to South",
                  indexLabel: "{y}",
                  yValueFormatString: "#0.##",
@@ -368,13 +392,133 @@ th {
 }
 </style>
 
-<p>Latest image: </p>
- <img src="http://172.20.240.54/images/lastshot.jpg" width="960" height="540" />
- <br>
+<p>Latest images: </p>
+<?php
+#$dir = "images/";
+#$images = glob($dir . "*.{gif,png,jpg,jpeg}", GLOB_BRACE); //formats to look for
+
+#$num_of_files = 1; //number of images to display
+
+#foreach($images as $image)
+#{
+#     $num_of_files--;
+
+#     if($num_of_files > -1)
+#       echo "<b>".$image."</b><br>Created on ".date('D, d M y H:i:s', filemtime($image))
+#        ."<br><img src='/$image' width='960' height='540'><br><br>" ; //display images
+#     else
+#       break;
+#}
+?>
+
+<?php 
+$dir2 = "images/";
+$images2 = glob($dir2 . "*.{gif,png,jpg,jpeg}", GLOB_BRACE); //formats to look for
+foreach ($images2 as $f) {
+    # store the image name
+    $list[] = $f;
+}
+
+sort($list);                    # sort is oldest to newest,
+
+$newimg = array_pop($list);   # Newest
+echo "<img src='/$newimg' width='960' height='540'><br><br>";
+echo array_pop($list);   # 2nd newest
+?>
+
+
+
+
+ <body style="text-align:center;"> 
+        
+      <h4> 
+          Ota kuva
+      </h4> 
+    
+      <?php
+        
+          if(isset($_POST['snapshot'])) { 
+              echo "Photo requested, wait for 5 seconds";
+              $command = escapeshellcmd('scripts/request_photo.py');
+              $output = shell_exec($command);
+              echo $output;
+              echo "<br>";
+              echo "<meta http-equiv='refresh' content='5'>";
+          } 
+      ?> 
+        
+      <form method="post"> 
+          <input type="submit" name="snapshot"
+                  value="Take a photo"/> 
+      </form> 
+  </head> 
+
+
+
+  <?php
+
+ ##### GALLERY #####
+
+// READ FILES FROM THE GALLERY FOLDER
+$dir = "images/";
+$images = glob($dir . "*.{jpg,jpeg,gif,png}", GLOB_BRACE);
+
+?>
+
+<html>
+  <head>
+    <link href="1-basic.css" rel="stylesheet">
+  </head>
+  <body>
+    <!-- [THE GALLERY] -->
+    <div id="gallery"><?php
+    foreach ($images as $i) {
+      printf("<img src='/images/%s'/>", basename($i));
+    }
+    ?></div>
+  </body>
+</html>
+
+<style>
+
+body, html {
+  padding: 0;
+  margin: 0;
+}
+
+/* [GALLERY] */
+#gallery {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+#gallery img {
+  box-sizing: border-box;
+  width: 25%;
+  max-height: 150px;
+  padding: 5px;
+  /* fill, contain, cover, scale-down : use whichever you like */
+  object-fit: cover;
+  cursor: pointer;
+}
+
+/* [RESPONSIVE GALLERY] */
+@media screen and (max-width: 850px) {
+  #gallery img {
+    width: 33%;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  #gallery img {
+    width: 50%;
+  }
+}
+</style>
+
+
 
 <?php                
-
-
         }
 }
 ?>
