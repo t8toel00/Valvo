@@ -29,23 +29,21 @@ void read_sensor()
   objekti=265-sensoryht;
 }
 void printall()
-{           
-  Serial.print("\nSensor1=");
-  Serial.print(sensor1);
-  Serial.print("\nSensor2=");
-  Serial.print(sensor2);
-  Serial.print("\nLeveys=");
-  Serial.print(objekti);
-  Serial.print("\n");
+{
+  Serial.println("\n1.Pari");           
+  Serial.print("Sensor1=");
+  Serial.println(sensor1);
+  Serial.print("Sensor2=");
+  Serial.println(sensor2);
+  Serial.print("Leveys=");
+  Serial.println(objekti);
 }
 void bluetooth()
 {
   if (EEBlue.available())
     Serial.print(EEBlue.read());
-      // Feed all data from termial to bluetooth
   if (Serial.available())
     EEBlue.write(Serial.read());
-  // Clear the trigPin by setting it LOW:
 }
 void bluetoothtrig()
 {
@@ -64,5 +62,5 @@ void loop ()
   bluetoothtrig();
   }
   else{read_sensor();}
-  delay(50);
+  delay(500);
 }
