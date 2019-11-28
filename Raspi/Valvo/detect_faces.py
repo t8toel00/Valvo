@@ -21,8 +21,16 @@ class cvCam():
         self.cascPath = "haarcascade_upperbody.xml"
         self.faceCascade = cv2.CascadeClassifier(self.cascPath)
         self.cam = VideoCapture(0)
-        self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
+        if self.cam.isOpened() == False:
+            print("Camera not opened.")
+        else:
+            print("Camera feed opened.")
+
+        #self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        #self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
+        self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 896)
         self.cam.grab()
 
     def snapAndDetect(self):
@@ -33,7 +41,7 @@ class cvCam():
         self.dt = datetime.datetime.now()
         self.filename = "snapshot-" + self.dt.strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
         if self.s:
-            #imwrite("snapshots/filename.jpg",img)
+            imwrite("snapshots/filename.jpg",self.img)
             self.gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
             self.faces = self.faceCascade.detectMultiScale(
                 self.gray,
@@ -48,10 +56,32 @@ class cvCam():
                 cv2.rectangle(self.img, (x, y), (x+w, y+h), (0, 255, 0), 2)
             imwrite("snapshots/" + self.filename,self.img)
             imwrite("snapshots/lastshot.jpg",self.img)
-            
-            # Release the video stream:
-            #cam.release()
+        
 
             # Finally, return the amount of faces, timestamp and the trigger source:
             return self.faces, self.dt
-        
+
+    def Snap(self):
+        """
+        Returns the status, image and date as a tuple.
+        Status is true if image was captured succesfully.
+        """
+
+        self.s, self.img = self.cam.read()
+        self.dt = datetime.datetime.now()
+        return self.s,self.img, self.dt
+
+    def Detect(self, photo):
+        """
+        Returns faceCascade
+        """
+
+        if stat:
+            self.gray = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
+            self.faces = self.faceCascade.detectMultiScale(
+                self.gray,
+                scaleFactor=1.1,
+                minNeighbors=5,
+                minSize=(30,30),
+                )
+            return self.faces

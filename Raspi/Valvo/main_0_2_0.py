@@ -15,36 +15,12 @@ import queue
 import sys
 import pysftp        
 
-def handle_read(conn):
-    
-    print("Received data:", str(btdata))
-
 def on_connect(client, userdata, flags, rc):
     print("Connected mqtt with result code " + str(rc))
 
 def on_message(client, userdata, msg):
     print("Received message from mqtt: ", msg.payload)
     detectAndSend()
-
-def sendToServer(camData):
-    # Print the number of faces and date:
-    print(camData[1], " Found ", len(facedata[0]), " persons.")
-    print("Time between trigger and finish: " + str(endTime-startTime))
-    
-    #Publish the data to server and print locally for debug:
-    try:
-        mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
-    except:
-        print("Error publishing to mqtt.")
-        pass
-    
-    print("Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
-    try:
-        #Push snapshot to server:
-        sftp.put("snapshots/lastshot.jpg", "/home/ubuntu/www/CodeIgniter/images/" + str(camera1.filename))
-    except:
-        print("Error pushing file over sftp.")
-        pass
 
 def detectAndSend():
 
@@ -69,7 +45,40 @@ def detectAndSend():
         print("Error pushing file over sftp.")
         pass
 
+# Commonly used flag sets for poll()
+READ_ONLY = select.POLLIN | select.POLLPRI | select.POLLHUP | select.POLLERR
+READ_WRITE = READ_ONLY | select.POLLOUT
+TIMEOUT = 60
 
+mqttPort = 1883
+mqttAddress = "172.20.240.54"
+
+sshUsername = "ubuntu"
+sshPassword = "beijing12"
+sshAddress = "172.20.240.54"
+
+if not os.path.exists('logs'):
+    os.mkdir('logs')
+
+dt = datetime.datetime.now()
+filename = "valvo-log-" + dt.strftime('%Y-%m-%d-%H%M%S')
+logfile= open("logs/" + filename, "w")
+logfile.writelines(datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S') + "Valvo log started." + chr(10))
+
+# Create new instance of mqtt_conn class and connect to broker
+logfile.writelines("Connecting to mqtt broker at address '" + mqttAddress + "' port " + str(mqttPort))
+print("Connecting to mqtt broker at address '" + mqttAddress + "' port " + str(mqttPort))
+mqtt_c1 = mqtt_conn()
+mqtt_c1.client.on_connect = on_connect
+mqtt_c1.client.on_message = on_message
+
+# Finally connect to mqtt broker and subscribe to a topic:
+mqtt_c1.connectMqtt(addr=mqttAddress,port=mqttPort,topic="server/takephoto")
+
+# Create an sftp connection to the server:
+print("Connecting to sftp: " + sshUsername + "@" + sshAddress)
+logfile.writelines("Connecting to sftp: " + sshUsername + "@" + sshAddress)
+sftp = pysftp.Connection(sshAddress, username = sshUsername, password = sshPassword)
 
 
 def createConnection(adr):
@@ -102,57 +111,10 @@ def createConnection(adr):
             #adr = lookUpNearbyBluetoothDevices()
             attempt = 0
 
-def parseData(data):
-    # Here we will parse the sensor data we get from arduino:
-
-    return data
-
-# Commonly used flag sets for poll()
-READ_ONLY = select.POLLIN | select.POLLPRI | select.POLLHUP | select.POLLERR
-READ_WRITE = READ_ONLY | select.POLLOUT
-TIMEOUT = 60
-
-mqttPort = 1883
-mqttAddress = "172.20.240.54"
-
-sshUsername = "ubuntu"
-sshPassword = "beijing12"
-sshAddress = "172.20.240.54"
-
-# Declare the queue, which is a list of tuples containing
-#   a date and the sensor data and the photo:
-sensorQueue = []
-
-if not os.path.exists('logs'):
-    os.mkdir('logs')
-
-dt = datetime.datetime.now()
-filename = "valvo-log-" + dt.strftime('%Y-%m-%d-%H%M%S')
-logfile= open("logs/" + filename, "w")
-logfile.writelines(datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S') + "Valvo log started." + chr(10))
-
-# Create new instance of mqtt_conn class and connect to broker
-logfile.writelines("Connecting to mqtt broker at address '" + mqttAddress + "' port " + str(mqttPort))
-print("Connecting to mqtt broker at address '" + mqttAddress + "' port " + str(mqttPort))
-mqtt_c1 = mqtt_conn()
-mqtt_c1.client.on_connect = on_connect
-mqtt_c1.client.on_message = on_message
-
-# Finally connect to mqtt broker and subscribe to a topic:
-mqtt_c1.connectMqtt(addr=mqttAddress,port=mqttPort,topic="server/takephoto")
-
-# Create an sftp connection to the server:
-print("Connecting to sftp: " + sshUsername + "@" + sshAddress)
-logfile.writelines("Connecting to sftp: " + sshUsername + "@" + sshAddress)
-sftp = pysftp.Connection(sshAddress, username = sshUsername, password = sshPassword)
-
-
 # Then establish bluetooth connections:
 arduinoA = createConnection("98:D3:31:B2:B8:D4") #kim-jong-il
 #arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
 arduinoB = createConnection("98:D3:31:B2:B9:4C") #kim-jong-ung
-
-arduinoA.handle_read = handle_read
 
 # Set up polling for bluetooth:
 poller = select.poll()
@@ -205,29 +167,12 @@ while True:
                 print("Received the following from '" + str(s.getpeername()) + "'.")
                 print(data)
 
-                # Parse data from received message:
-                procData = parseData(data)
-
-                # Take a picture for later detection:
-                imageData = camera1.Snap()
-                
-                image = imageData(2) # Image is the second element of the tuple.
-                dt = imageData(3) # Date is the third element of the tuple.
-
-                #Append the sensor data and the photo to the queue for detecting:
-                sensorQueue.append((dt, procData, image))
-
-
                 detectAndSend()
 
                     #FORMAT: "table,xxx,xxx,xxx,xxx"
                     #Format for camera data: "'Tunnistus',n,yyyy-mm-dd hh:mm:ss.ms,sensor"
                     #   ^where n = number of faces, sensor = '0'
                     #dateformat: yyyy-mm-dd hh:mm:ss.ms
-
-            if len(sensorQueue) > 0:
-                #If we have data in queue, process it:
-
 
             #else:
                 #Refresh the camera so we won't get old images from buffer when trying to actually read:
