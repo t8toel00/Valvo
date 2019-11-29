@@ -16,7 +16,6 @@ import sys
 import pysftp        
 
 def handle_read(conn):
-    
     print("Received data:", str(btdata))
 
 def on_connect(client, userdata, flags, rc):
@@ -56,12 +55,12 @@ def detectAndSend():
     
     #Publish the data to server and print locally for debug:
     try:
-        mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
+        mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])) + "0")
     except:
         print("Error publishing to mqtt.")
         pass
     
-    print("Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
+    print("Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])) + "0")
     try:
         #Push snapshot to server:
         sftp.put("snapshots/lastshot.jpg", "/home/ubuntu/www/CodeIgniter/images/" + str(camera1.filename))
@@ -217,13 +216,9 @@ while True:
                 #Append the sensor data and the photo to the queue for detecting:
                 sensorQueue.append((dt, procData, image))
 
-
                 detectAndSend()
 
-                    #FORMAT: "table,xxx,xxx,xxx,xxx"
-                    #Format for camera data: "'Tunnistus',n,yyyy-mm-dd hh:mm:ss.ms,sensor"
-                    #   ^where n = number of faces, sensor = '0'
-                    #dateformat: yyyy-mm-dd hh:mm:ss.ms
+
 
             if len(sensorQueue) > 0:
                 #If we have data in queue, process it:
