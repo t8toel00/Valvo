@@ -1,0 +1,122 @@
+var dps = [];
+for(var i = 0; i < row.length; i++) {
+dps.push({ label: row[i].datecreated, y: newdataPoints[i].ihmiset_kpl) });
+} 
+
+ window.onload = function () {
+  
+
+
+ var chart = new CanvasJS.Chart("chartContainer", {
+         animationEnabled: true,
+         theme: "light2",
+         title:{
+                 text: "BIG VALVO DATA"
+         },
+         legend:{
+                 cursor: "pointer",
+                 verticalAlign: "center",
+                 horizontalAlign: "right",
+                 itemclick: toggleDataSeries
+         },
+         data: [{
+                 type: "area",
+                 fillOpacity: .2,
+                 name: "to North",
+                 indexLabel: "{y}",
+                 yValueFormatString: "#0.##",
+                 showInLegend: true,
+                 dataPoints: dps
+         },{
+                 type: "area",
+                 fillOpacity: .2,
+                 name: "to South",
+                 indexLabel: "{y}",
+                 yValueFormatString: "#0.##",
+                 showInLegend: true,
+                 dataPoints: dps
+         }]
+ });
+ chart.render();
+  
+ function toggleDataSeries(e){
+         if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                 e.dataSeries.visible = false;
+         }
+         else{
+                 e.dataSeries.visible = true;
+         }
+         chart.render();
+ }
+  
+ }
+
+
+<div id="chartContainer" style="height: 370px; width: 100%;"></div>
+ <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+datapoints:
+ <?php echo json_encode($dataPoints1, JSON_NUMERIC_CHECK); ?>
+
+
+foreach ($query2->result_array() as $tunniste_ihmiset)
+         {
+          echo '</br>';
+          echo $tunniste_ihmiset['sum(ihmiset_kpl)'];
+          echo '</br>';
+         }
+
+         foreach ($query2->result_array() as $tunniste_odotettu)
+         {
+          echo '</br>';
+          echo $tunniste_odotettu['sum(odotettu_kpl)'];
+          echo '</br>';
+         }
+
+         foreach ($query2->result_array() as $tunniste_date)
+         {
+          echo '</br>';
+          echo $tunniste_date['datecreated'];
+          echo '</br>';
+         }
+
+
+
+
+         catch(\PDOException $ex){
+    print($ex->getMessage());
+    }
+
+
+
+ $link = new \PDO(   'mysql:host=127.0.0.1;dbname=valvo;charset=utf8', //'mysql:host=localhost;dbname=canvasjs_db;charset=utf8mb4',
+                        'admin', //'root',
+                        'beijing12', //'',
+                        array(
+                            \PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                            \PDO::ATTR_PERSISTENT => false
+                        )
+                    );
+
+    $handle = $link->prepare('SELECT sum(ihmiset_kpl), sum(odotettu_kpl), date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 200 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC'); 
+    $handle->execute(); 
+
+
+
+    'SELECT sum(ihmiset_kpl), sum(odotettu_kpl), date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 48 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC'

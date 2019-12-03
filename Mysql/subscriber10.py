@@ -70,6 +70,7 @@ while z == 1:
 
    # elif len(my_list) == 4:
    #  osoite, k_aika, ihmiset_kpl, odotettu = my_list
+   # Tunnistus,2019-11-29 10:25:30.111,0,0
 
     elif len(my_list) == 5 or len(my_list) < 3 or len(my_list) > 6:
      print("Unexpected message/protocol. Might be too many values or too few. Values are separated with a comma , ")
