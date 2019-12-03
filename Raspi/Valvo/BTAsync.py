@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
-
-from threading import Thread
 import bluetooth
 from bluetooth import *
+import threading
 import time
 from time import sleep
-
-def foo(bar):
-    print('hello {0}'.format(bar))
-    return "foo"
-
 
 def createConnection(adr):
 
@@ -38,6 +32,7 @@ def createConnection(adr):
             #print("Now scanning for nearby devices...")
             #adr = lookUpNearbyBluetoothDevices()
             attempt = 0
+
 
 class BTConn():
 
@@ -83,46 +78,19 @@ class BTConn():
                 # raise BluetoothException(error.message)
         return False 
 
-    def read_from_bluetooth(self):
+    def read_from_bluetooth():
         while True:
-            try:
-                data = self.sock.recv(1024)
-                return self.address, data
-            except:
-                print("error")
+            data = self.recv(1024)
+            print(data)
+            handle_read(dat=data)
 
-class ThreadWithReturnValue(Thread):
-    def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs={}, Verbose=None):
-        Thread.__init__(self, group, target, name, args, kwargs)
-        self._return = None
-    def run(self):
-        print(type(self._target))
-        if self._target is not None:
-            self._return = self._target(*self._args,
-                                                **self._kwargs)
-    def join(self, *args):
-        Thread.join(self, *args)
-        return self._return
-    def reset(self):
-        self._return = None
+    def handle_read(self, dat):
+        #btdata = self.recv(1024)
+        print(dat)
 
-def test(dat):
-    print("dataa:", dat)
-
-#arduinoA = createConnection("98:D3:31:B2:B9:4C") #kim-jong-ung
-arduinoA = createConnection("98:D3:31:B2:B8:D4") #kim-jong-il
-#twrv = ThreadWithReturnValue(target=foo, args=('world!',))
-
-thrPollBT = ThreadWithReturnValue(target=arduinoA.read_from_bluetooth)
-thrPollBT.start()
-arduinoA.class_callback = test
+arduinoA = createConnection("98:D3:31:B2:B9:4C") #kim-jong-ung
+thread = threading.Thread(target=arduinoA.read_from_bluetooth, args=())
+#arduinoA.handle_read = handle_read
 
 while True:
-    print("no data")
-    print(thrPollBT.join())
-    #thrPollBT.reset()
-    
-
-#twrv.start()
-#print(twrv.join())   # prints foo
+    print("Nothing to see here")

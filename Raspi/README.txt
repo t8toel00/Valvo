@@ -9,4 +9,4 @@ Main.py is the main script which will call all the other scripts when necessary.
 
 Python modules needed:
 
-os serial time datetime mqtt cv2 bluetooth select queue sys pysftp
+serial mqtt cv2 pysftp pybluez paho-mqtt
