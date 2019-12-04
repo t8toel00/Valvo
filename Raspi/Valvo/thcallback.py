@@ -78,12 +78,12 @@ class BTConn():
         return False 
 
     def read_from_bluetooth(self):
-        while True:
-            try:
-                data = self.sock.recv(1024)
-                return self.address, data
-            except:
-                print("error")
+        #while wait 0.5s:
+        try:
+            data = self.sock.recv(1024)
+            return self.address, data
+        except:
+            print("error")
 
 def createConnection(adr):
 
@@ -151,12 +151,11 @@ btThread = BaseThread(
     callback=cb
 )
 
-event_loop_a = asyncio.new_event_loop()
-
 #thread.start()
 btThread.start()
 
 while True:
     x = 1
     print("no dataaa")
+    #arduinoA.sock.recv(1024)
     time.sleep(1)
