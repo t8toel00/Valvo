@@ -1,4 +1,1 @@
-Arduinon Bluetoothin eriversioit
-
-bluetooth hc06
-bluetooth maxsonic
+Arduinon Bluetooth ja ultraääni sensori
