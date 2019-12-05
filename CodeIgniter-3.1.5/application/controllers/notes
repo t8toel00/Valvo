@@ -1,3 +1,20 @@
+http://172.20.240.54/images/snapshot-2019-12-05-095605-detected.jpg <- karikuva
+
+
+<form action="/action_page.php">
+  Time of detection:<br>
+  <input type="text" name="image" value="yyyy-mm-dd-hhmmss"><br>
+  <br>
+  <input type="submit" value="Search">
+</form>
+
+<form onsubmit="window.location = 'http://172.20.240.54/images/snapshot-' + search.value '-detected.jpg'; return false;">
+<input id="search" placeholder="Search" type="search" name="search"></input>
+<input type="submit" value="Send">
+</form>
+
+
+
 // "Auto reload upon new Tunnistus-data"-script, too big of a hassle with ajax with given time
 /*
 var datatik;
