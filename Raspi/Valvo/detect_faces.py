@@ -69,19 +69,28 @@ class cvCam():
 
         self.s, self.img = self.cam.read()
         self.dt = datetime.datetime.now()
-        return self.s,self.img, self.dt
+        if self.s:
+            return self.s,self.img, self.dt
 
-    def Detect(self, photo):
+    def Detect(self, date, photo):
         """
         Returns faceCascade
         """
+        #self.faces = ()
+        self.gray = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
+        self.faces = self.faceCascade.detectMultiScale(
+            self.gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(30,30),
+            )
 
-        if stat:
-            self.gray = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
-            self.faces = self.faceCascade.detectMultiScale(
-                self.gray,
-                scaleFactor=1.1,
-                minNeighbors=5,
-                minSize=(30,30),
-                )
-            return self.faces
+        #print("Found {0} faces!".format(len(self.faces)))
+        for (x, y, w, h) in self.faces:
+            cv2.rectangle(self.img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+        self.filename = "snapshot-" + date.strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
+        imwrite("snapshots/" + self.filename,self.img)
+        imwrite("snapshots/lastshot.jpg",self.img)
+
+        return self.faces

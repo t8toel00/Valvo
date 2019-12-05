@@ -23,32 +23,43 @@ from queue import *
 # Thread class with callback:
 class BaseThread(threading.Thread):
 
-    stop_event = threading.Event()
     
-    def __init__(self, callback=None, callback_args=None, loop=False, args=tuple([]), **kwargs):
+    
+    def __init__(self, callback=None, callback_args=None, *args, **kwargs):
         target = kwargs.pop('target')
         cls = self.__class__
-        self.__class__.stop_event.clear()
+        #self.__class__.stop_event.clear()
         super(BaseThread, self).__init__(target=self.target_with_callback, *args, **kwargs)
         self.callback = callback
         self.method = target
-        self.loop = loop
+        self.loop = False
+        self.stop_event = threading.Event()
+        self.stop_event.clear()
         #self.callback_args = callback_args
     
-    @classmethod
-    def stop_thread(cls):
-        cls.stop_event.set()
-
-    def target_with_callback(self):
+    #@classmethod
+    def stop_thread(self):
+        #cls.stop_event.set()
+        self.stop_event.set()
+    
+    def target_with_callback(self, arg = None):
         cls = self.__class__
-        while not cls.stop_event.is_set():
-            self.callback_args = self.method()
+        while not self.stop_event.is_set():
+            if arg == None:
+                self.callback_args = self.method()
+            if arg != None:
+                self.callback_args = self.method(arg)
+            
+            print("loop: ", self.loop)
+            print("Is stop_event set: ", self.stop_event.is_set())
             if self.callback is not None:
                 self.callback(*self.callback_args)
                 if self.loop == False:
+                    print("THREAD LOOP STOPPEEED")
                     self.stop_thread()
 
 #Bluetooth callbacks:
+#MAKE THIS A THREAD INSTEAD??
 def on_BT_read_A(param1, param2):
     print("Received message from A: ")
     print("{} {}".format(param1, param2))
@@ -73,8 +84,8 @@ def on_BT_read_A(param1, param2):
         startFlag = False
         pass
     
-    # Delete the buffer characters (b'xxx'=>xxx)
-    for c in range(1, len(formStr)-1):
+    # Delete the identifying characters (b'[xxx]'=>[xxx])
+    for c in range(2, len(formStr)-1):
         btStr = btStr + formStr[c]
         print(btStr)
 
@@ -88,7 +99,11 @@ def on_BT_read_A(param1, param2):
             else:
                 finalStr = finalStr + c
     
+    print("paastiin tanne asti")
+    print(startFlag)
+    print(endFlag)
     if endFlag == True:
+        print("mutta ei tanne")
         imageData = camera1.Snap()
         image = imageData[1] # Image is the second element of the tuple.
         dt = imageData[2] # Date is the third element of the tuple.
@@ -97,10 +112,13 @@ def on_BT_read_A(param1, param2):
         #sensorQueue.append((dt, finalStr, image))
         sensorQueue.put((dt, finalStr, image))
 
+        btStr = ""
         finalStr = ""
         # Reset the flags:
         startFlag = False
         endFlag = False
+    else: 
+        print("no endflag")
 
 
 
@@ -141,8 +159,19 @@ def sendToServer(camData):
 
 
 
-def detectAndSend(data,more):
+def detectAndSend(data):
+    # data is a tuple containing: (date, width, image)
     print("moro taa toimii")
+
+    # Detect people from image using CV2:
+    facedata = camera1.Detect(date = data[0], photo = data[2])
+    print(facedata)
+    camPeople = len(facedata[0])
+    print("Found", camPeople, " faces.")
+
+
+
+    return (data,)
 
 
 # def detectAndSend(allData):
@@ -168,7 +197,7 @@ def detectAndSend(data,more):
 #         print("Error pushing file over sftp.")
 #         pass
 
-def handle_detect():
+def handle_detect(data):
     # This callback function is called when detection algorithm has been run.
     print("Detect done")
 
@@ -260,16 +289,18 @@ arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
 btThreadA = BaseThread(
     name='btA',
     target=arduinoA.read_from_bluetooth,
-    loop=True,
+    #loop=True,
     callback=on_BT_read_A
 )
+btThreadA.loop = True
 
 btThreadB = BaseThread(
     name='btB',
     target=arduinoB.read_from_bluetooth,
-    loop=True,
+    #loop=True,
     callback=on_BT_read_B
 )
+btThreadB.loop = True
 
 
 
@@ -288,6 +319,10 @@ fd_to_socket = { arduinoA.sock.fileno(): arduinoA.sock, arduinoB.sock.fileno(): 
 
 # Setup camera:
 camera1 = cvCam()
+
+thrIndex = 0
+
+print("Entering main loop")
 
 # Now we can enter the main loop:
 while True:
@@ -313,7 +348,7 @@ while True:
     # Grab frame but don't save it (to keep buffer running):
     camera1.cam.grab()
 
-    print("looping")
+    #print("looping")
 
     # for fd, flag in events:
     #     # Retrieve the actual socket from its file descriptor
@@ -348,21 +383,19 @@ while True:
         
         #If we have data in queue, process it:
         print("data in queue:")
-        qIndex = qIndex - 1
+        #qIndex = qIndex - 1
 
-        #print (sensorQueue[i])
-
-        arguments = sensorQueue.get()
-        
-        detThread = BaseThread(
-                    name='detectThrd',
+        arguments = (sensorQueue.get(),)
+        thrIndex = thrIndex + 1
+        BaseThread(
+                    name='detectThrd' + str(thrIndex),
                     target=detectAndSend,
                     args=arguments,
                     callback=handle_detect,
-                    loop=False
-                    )
+                    #loop=False
+                    ).start()
         
-        detThread.start()
+        #detThread.start()
 
         #qIndex = qIndex + 1
         
@@ -377,10 +410,8 @@ while True:
                 
                 # Remove message queue
                 #del message_queues[s]
-    else:
-        qIndex = 0
     
-    time.sleep(0.100)
+    #time.sleep(0.01)
 
 
 arduinoA.close()
