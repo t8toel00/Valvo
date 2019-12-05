@@ -70,22 +70,19 @@ abs(vert);
 
 void loop()
 {
-  read_sensor();
-  
-  if(objekt<23)
-  {
-    printall();
-    bluetooth();
-    read_sensor();
-    vertailu();
-      if(vert<10) 
-      {
-        return bluetooth();
-       }
-        else
+ read_sensor();
+ if(objekt>150)
+         {
+         printall();     
+         bluetooth();
+         vertailu();
+         if(vert>15)
+              {
+               return 0;
+              }
+         }
+ else
         {
-        delay(500);
+        return 0;   
         }
-  }
- 
-}
+ }
