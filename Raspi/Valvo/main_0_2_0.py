@@ -32,12 +32,12 @@ def detectAndSend():
     
     #Publish the data to server and print locally for debug:
     try:
-        mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
+        mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])) + ",0")
     except:
         print("Error publishing to mqtt.")
         pass
     
-    print("Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
+    print("Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])) + "0")
     try:
         #Push snapshot to server:
         sftp.put("snapshots/lastshot.jpg", "/home/ubuntu/www/CodeIgniter/images/" + str(camera1.filename))
@@ -113,8 +113,8 @@ def createConnection(adr):
 
 # Then establish bluetooth connections:
 arduinoA = createConnection("98:D3:31:B2:B8:D4") #kim-jong-il
-#arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
-arduinoB = createConnection("98:D3:31:B2:B9:4C") #kim-jong-ung
+arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
+#arduinoB = createConnection("98:D3:31:B2:B9:4C") #kim-jong-ung
 
 # Set up polling for bluetooth:
 poller = select.poll()
