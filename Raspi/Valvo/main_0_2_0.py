@@ -28,7 +28,7 @@ def detectAndSend():
     endTime = time.time()
     # Print the number of faces and date:
     print(facedata[1], " Found ", len(facedata[0]), " faces.")
-    print("Time between trigger and finish: " + str(endTime-startTime))
+    #print("Time between trigger and finish: " + str(endTime-startTime))
     
     #Publish the data to server and print locally for debug:
     try:

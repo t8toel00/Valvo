@@ -9,21 +9,115 @@ import datetime
 from mqtt_publisher import *
 from detect_faces import *
 import bluetooth
-from testBT import *
+# from testBT import *
+from BTAsync import *
 import select
 import queue
 import sys
-import pysftp        
+import pysftp
+import threading
+from threading import *
+import queue
+from queue import *
 
-def handle_read(conn):
-    print("Received data:", str(btdata))
+# Thread class with callback:
+class BaseThread(threading.Thread):
 
+    stop_event = threading.Event()
+    
+    def __init__(self, callback=None, callback_args=None, loop=False, args=tuple([]), **kwargs):
+        target = kwargs.pop('target')
+        cls = self.__class__
+        self.__class__.stop_event.clear()
+        super(BaseThread, self).__init__(target=self.target_with_callback, *args, **kwargs)
+        self.callback = callback
+        self.method = target
+        self.loop = loop
+        #self.callback_args = callback_args
+    
+    @classmethod
+    def stop_thread(cls):
+        cls.stop_event.set()
+
+    def target_with_callback(self):
+        cls = self.__class__
+        while not cls.stop_event.is_set():
+            self.callback_args = self.method()
+            if self.callback is not None:
+                self.callback(*self.callback_args)
+                if self.loop == False:
+                    self.stop_thread()
+
+#Bluetooth callbacks:
+def on_BT_read_A(param1, param2):
+    print("Received message from A: ")
+    print("{} {}".format(param1, param2))
+    
+    formStr = format(param2)
+
+    try: finalStr
+    except:
+        finalStr = ""
+
+    try: btStr
+    except:
+        btStr = ""
+
+    try: endFlag
+    except:
+        endFlag = False
+        pass
+
+    try: startFlag
+    except:
+        startFlag = False
+        pass
+    
+    # Delete the buffer characters (b'xxx'=>xxx)
+    for c in range(1, len(formStr)-1):
+        btStr = btStr + formStr[c]
+        print(btStr)
+
+    # Append data as long as we receive end flag "]"
+    if endFlag == False:
+        for c in btStr:
+            if c == chr(91): # "["
+                startFlag = True
+            elif c == chr(93):  # "]"
+                endFlag = True
+            else:
+                finalStr = finalStr + c
+    
+    if endFlag == True:
+        imageData = camera1.Snap()
+        image = imageData[1] # Image is the second element of the tuple.
+        dt = imageData[2] # Date is the third element of the tuple.
+
+        # Append to queue:
+        #sensorQueue.append((dt, finalStr, image))
+        sensorQueue.put((dt, finalStr, image))
+
+        finalStr = ""
+        # Reset the flags:
+        startFlag = False
+        endFlag = False
+
+
+
+def on_BT_read_B(param1,param2):
+    print("Received message from B: ")
+    print("{}{}".format(param1,param2))
+
+
+
+#MQTT callbacks:
 def on_connect(client, userdata, flags, rc):
     print("Connected mqtt with result code " + str(rc))
 
 def on_message(client, userdata, msg):
     print("Received message from mqtt: ", msg.payload)
     detectAndSend()
+
 
 def sendToServer(camData):
     # Print the number of faces and date:
@@ -45,29 +139,38 @@ def sendToServer(camData):
         print("Error pushing file over sftp.")
         pass
 
-def detectAndSend():
 
-    facedata = camera1.snapAndDetect()
-    endTime = time.time()
-    # Print the number of faces and date:
-    print(facedata[1], " Found ", len(facedata[0]), " faces.")
-    print("Time between trigger and finish: " + str(endTime-startTime))
-    
-    #Publish the data to server and print locally for debug:
-    try:
-        mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])) + "0")
-    except:
-        print("Error publishing to mqtt.")
-        pass
-    
-    print("Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])) + "0")
-    try:
-        #Push snapshot to server:
-        sftp.put("snapshots/lastshot.jpg", "/home/ubuntu/www/CodeIgniter/images/" + str(camera1.filename))
-    except:
-        print("Error pushing file over sftp.")
-        pass
 
+def detectAndSend(data,more):
+    print("moro taa toimii")
+
+
+# def detectAndSend(allData):
+
+#     facedata = camera1.snapAndDetect()
+#     endTime = time.time()
+#     # Print the number of faces and date:
+#     print(facedata[1], " Found ", len(facedata[0]), " faces.")
+#     print("Time between trigger and finish: " + str(endTime-startTime))
+    
+#     #Publish the data to server and print locally for debug:
+#     try:
+#         mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])) + "0")
+#     except:
+#         print("Error publishing to mqtt.")
+#         pass
+    
+#     print("Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])) + "0")
+#     try:
+#         #Push snapshot to server:
+#         sftp.put("snapshots/lastshot.jpg", "/home/ubuntu/www/CodeIgniter/images/" + str(camera1.filename))
+#     except:
+#         print("Error pushing file over sftp.")
+#         pass
+
+def handle_detect():
+    # This callback function is called when detection algorithm has been run.
+    print("Detect done")
 
 
 
@@ -77,7 +180,7 @@ def createConnection(adr):
     connection = BTConn()
     # Get the MAC address of a found device:
     #adr = lookUpNearbyBluetoothDevices()
-    7
+    
     logfile.writelines("Connecting to device " + adr)
     print("Connecting to device " + adr)
     # Try to connect and try again if not succesful:
@@ -103,8 +206,9 @@ def createConnection(adr):
 
 def parseData(data):
     # Here we will parse the sensor data we get from arduino:
-
     return data
+
+
 
 # Commonly used flag sets for poll()
 READ_ONLY = select.POLLIN | select.POLLPRI | select.POLLHUP | select.POLLERR
@@ -120,7 +224,9 @@ sshAddress = "172.20.240.54"
 
 # Declare the queue, which is a list of tuples containing
 #   a date and the sensor data and the photo:
-sensorQueue = []
+#sensorQueue = []
+sensorQueue = queue.Queue()
+qIndex = 0
 
 if not os.path.exists('logs'):
     os.mkdir('logs')
@@ -148,15 +254,33 @@ sftp = pysftp.Connection(sshAddress, username = sshUsername, password = sshPassw
 
 # Then establish bluetooth connections:
 arduinoA = createConnection("98:D3:31:B2:B8:D4") #kim-jong-il
-#arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
-arduinoB = createConnection("98:D3:31:B2:B9:4C") #kim-jong-ung
+arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
+#arduinoB = createConnection("98:D3:31:B2:B9:4C") #kim-jong-ung
 
-arduinoA.handle_read = handle_read
+btThreadA = BaseThread(
+    name='btA',
+    target=arduinoA.read_from_bluetooth,
+    loop=True,
+    callback=on_BT_read_A
+)
+
+btThreadB = BaseThread(
+    name='btB',
+    target=arduinoB.read_from_bluetooth,
+    loop=True,
+    callback=on_BT_read_B
+)
+
+
+
+#Start bluetooth threads:
+btThreadA.start()
+btThreadB.start()
 
 # Set up polling for bluetooth:
-poller = select.poll()
-poller.register(arduinoA.sock, READ_WRITE)
-poller.register(arduinoB.sock, READ_WRITE)
+# poller = select.poll()
+# poller.register(arduinoA.sock, READ_WRITE)
+# poller.register(arduinoB.sock, READ_WRITE)
 
 # Map file descriptors to socket objects
 fd_to_socket = { arduinoA.sock.fileno(): arduinoA.sock, arduinoB.sock.fileno(): arduinoB.sock,
@@ -184,46 +308,64 @@ while True:
         arduinoB = createConnection("98:D3:31:20:40:BB")
         pass
 
-    events = poller.poll(TIMEOUT)
+    #events = poller.poll(TIMEOUT)
 
     # Grab frame but don't save it (to keep buffer running):
     camera1.cam.grab()
 
-    for fd, flag in events:
-        # Retrieve the actual socket from its file descriptor
-        s = fd_to_socket[fd]
+    print("looping")
 
-        if flag & (select.POLLIN | select.POLLPRI):
-            data = s.recv(1024)
+    # for fd, flag in events:
+    #     # Retrieve the actual socket from its file descriptor
+    #     s = fd_to_socket[fd]
 
-            if data:
-                # A readable client socket has data
-                startTime = time.time()
-                logfile.writelines("Received the following from '" + str(s.getpeername()) + "'.")
-                logfile.writelines(str(data))
-                print("Received the following from '" + str(s.getpeername()) + "'.")
-                print(data)
+    #     if flag & (select.POLLIN | select.POLLPRI):
+    #         data = s.recv(1024)
 
-                # Parse data from received message:
-                procData = parseData(data)
+    #         if data:
+    #             # A readable client socket has data
+    #             startTime = time.time()
+    #             logfile.writelines("Received the following from '" + str(s.getpeername()) + "'.")
+    #             logfile.writelines(str(data))
+    #             print("Received the following from '" + str(s.getpeername()) + "'.")
+    #             print(data)
 
-                # Take a picture for later detection:
-                imageData = camera1.Snap()
+    #             # Parse data from received message:
+    #             procData = parseData(data)
+
+    #             # Take a picture for later detection:
+    #             imageData = camera1.Snap()
                 
-                image = imageData(2) # Image is the second element of the tuple.
-                dt = imageData(3) # Date is the third element of the tuple.
+    #             image = imageData(2) # Image is the second element of the tuple.
+    #             dt = imageData(3) # Date is the third element of the tuple.
 
                 #Append the sensor data and the photo to the queue for detecting:
-                sensorQueue.append((dt, procData, image))
+                # sensorQueue.append((dt, procData, image))
 
-                detectAndSend()
+                # detectAndSend()
 
+    if sensorQueue.qsize() != 0:
+        
+        #If we have data in queue, process it:
+        print("data in queue:")
+        qIndex = qIndex - 1
 
+        #print (sensorQueue[i])
 
-            if len(sensorQueue) > 0:
-                #If we have data in queue, process it:
+        arguments = sensorQueue.get()
+        
+        detThread = BaseThread(
+                    name='detectThrd',
+                    target=detectAndSend,
+                    args=arguments,
+                    callback=handle_detect,
+                    loop=False
+                    )
+        
+        detThread.start()
 
-
+        #qIndex = qIndex + 1
+        
             #else:
                 #Refresh the camera so we won't get old images from buffer when trying to actually read:
                 
@@ -235,8 +377,10 @@ while True:
                 
                 # Remove message queue
                 #del message_queues[s]
+    else:
+        qIndex = 0
     
-    #time.sleep(0.100)
+    time.sleep(0.100)
 
 
 arduinoA.close()
