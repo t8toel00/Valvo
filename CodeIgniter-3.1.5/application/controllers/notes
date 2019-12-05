@@ -1,3 +1,34 @@
+// "Auto reload upon new Tunnistus-data"-script, too big of a hassle with ajax with given time
+/*
+var datatik;
+var tik;
+
+datatik = setInterval(data_update, 5000);
+
+function data_update() {
+ <?php # $row_chk = $this->db->query('SELECT COUNT(*) FROM Tunnistus'); ?>;
+ data_chk = <?php # echo json_encode($row_chk, JSON_NUMERIC_CHECK); ?>; //esim. 5
+  for (tik = 0; tik < 1; tik++) {
+    data_first = data_chk; 
+    alert("first = check");
+  }
+
+alert("5 sec tik");
+
+ if (data_chk != data_first) {
+   alert("reload!");
+   location.reload();
+   tik = 0;
+ }
+}
+*/
+// #############################################
+
+
+$report_files = glob("\/user_uploads\/reportcards\/term\_10\/(.*)\_(.*)\.pdf");
+
+pip install --install-option="--prefix=/usr/lib/python3/dist-packages" paho-mqtt
+
 var dps = [];
 for(var i = 0; i < row.length; i++) {
 dps.push({ label: row[i].datecreated, y: newdataPoints[i].ihmiset_kpl) });

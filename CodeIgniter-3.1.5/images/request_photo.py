@@ -3,9 +3,9 @@
 import paho.mqtt.client as mqtt
 
 # This is the Publisher
-
+print("Sending request ")
 client = mqtt.Client()
 client.connect("127.0.0.1",1883,60)
 client.publish("server/takephoto", "1")
-print("Request sent")
+print("Request sent ")
 client.disconnect()

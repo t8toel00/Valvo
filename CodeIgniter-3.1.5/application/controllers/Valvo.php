@@ -132,7 +132,7 @@ sort($list);                    # sort is oldest to newest,
 
 $newimg = array_pop($list);   # Newest
 echo "<img src='/$newimg' width='960' height='540'><br><br>";
-echo array_pop($list);   # 2nd newest
+echo "$newimg";   # 2nd newest
 ?>
 </div> <!-- ------------------------------------------------------------------ -->
 
@@ -230,33 +230,16 @@ th {
  <!DOCTYPE HTML>
  <html>
  <head>  
+
+ <form action="/action_page.php">
+  First name:<br>
+  <input type="text" name="firstname" value="Mickey"><br>
+  Last name:<br>
+  <input type="text" name="lastname" value="Mouse"><br><br>
+  <input type="submit" value="Submit">
+</form> 
+ 
  <script>
-
-// "Auto reload upon new Tunnistus-data"-script 
-/*
-var datatik;
-var tik;
-
-datatik = setInterval(data_update, 5000);
-
-function data_update() {
- <?php # $row_chk = $this->db->query('SELECT COUNT(*) FROM Tunnistus'); ?>;
- data_chk = <?php # echo json_encode($row_chk, JSON_NUMERIC_CHECK); ?>; //esim. 5
-  for (tik = 0; tik < 1; tik++) {
-    data_first = data_chk; 
-    alert("first = check");
-  }
-
-alert("5 sec tik");
-
- if (data_chk != data_first) {
-   alert("reload!");
-   location.reload();
-   tik = 0;
- }
-}
-*/
-// #############################################
 
 var dps = <?php echo json_encode($data_points, JSON_NUMERIC_CHECK); ?>;
 var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
@@ -266,7 +249,7 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
          animationEnabled: true,
          theme: "light2",
          title:{
-                 text: "Detections"
+                 text: "Detections per Hour"
          },
          legend:{
                  cursor: "pointer",
@@ -599,6 +582,11 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
 </div>
 
 <style>
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
 /* Add a black background color to the top navigation */
 .topnav {
   background-color: #333;
@@ -659,7 +647,7 @@ sort($list);                    # sort is oldest to newest,
 
 $newimg = array_pop($list);   # Newest
 echo "<img src='/$newimg' width='960' height='540'><br><br>";
-echo array_pop($list);   # 2nd newest
+echo "$newimg";
 ?>
 
 
@@ -668,16 +656,18 @@ echo array_pop($list);   # 2nd newest
  <body style="text-align:center;"> 
         
       <h4> 
-          Take a picture
+        
       </h4> 
     
       <?php
         
-          if(isset($_POST['snapshot'])) { 
-              $message2=shell_exec("/var/www/CodeIgniter/images/hellopy.sh"); #hellopy.sh testiohjelma
-              print_r($message2);     # suorittaa shellissä echot mutta ei itse "python3 request_photo.py"-riviä
-              echo "Photo requested"; # sama .sh tiedosto suoriutuu ilman ongelmia Ubuntun terminaalissa
-          }                           # käyttöoikeudet katottu, polku on oikea (compressJpeg.sh toimii alempana)
+          if(isset($_POST['snapshot'])) {
+           $command = "/usr/bin/env python3 /var/www/CodeIgniter/images/hellopython.py";  
+           $message2=exec($command, $out, $status);
+            print_r($message2);
+            echo ", refreshing after 5 seconds";
+            echo "<meta http-equiv='refresh' content='5'>";
+          }
 
           if(isset($_POST['compress'])) { 
             echo "Compression requested: ";
