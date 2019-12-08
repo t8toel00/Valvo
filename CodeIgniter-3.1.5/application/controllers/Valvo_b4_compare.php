@@ -1,3 +1,9 @@
+<!-- 
+Project's website is implemented using Codeigniter PHP framework. For learning and simplicity's sake,
+the whole webpage with its subpages are contained in this Valvo.php -file, in their own functions.
+
+-->
+
 <?php
 class Valvo extends CI_Controller {
 
@@ -6,7 +12,6 @@ class Valvo extends CI_Controller {
         public function index()
         {
 ?>
-<meta http-equiv="refresh" content="30">
 <head>
   <title>Valvontadata</title>
   <h1>Valvontadata</h1>
@@ -14,7 +19,7 @@ class Valvo extends CI_Controller {
 <br>
 
 <div class="topnav">
-  <a href="http://172.20.240.54/">All</a>
+  <a href="http://172.20.240.54/">Home</a>
   <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
   <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
 </div>
@@ -33,9 +38,9 @@ body {
 .header {
   grid-area: header;
   background-color: #f1f1f1;
-  padding: 30px;
+  padding: 20px;
   text-align: center;
-  font-size: 35px;
+  font-size: 18px;
 }
 
 /* The grid container */
@@ -82,8 +87,6 @@ body {
   }
 }
 
-
-/*####################################################################*/
 /*####### Add a black background color to the top navigation #########*/
 .topnav {
   background-color: #333;
@@ -116,8 +119,9 @@ body {
 
 <div class="grid-container"> <!-- HEADER CONTENT HERE (stops at /div) -->
   <div class="header">
+  <div id="box" align="center">
 
-<p>Latest image: </p>
+<h2>Latest image: </h2>
 
 <?php 
 $dir2 = "images/";
@@ -130,19 +134,15 @@ foreach ($images2 as $f) {
 sort($list);                    # sort is oldest to newest,
 
 $newimg = array_pop($list);   # Newest
-echo "<img src='/$newimg' width='960' height='540'><br><br>";
-echo "$newimg";   # 2nd newest
-?>
-</div> <!-- ------------------------------------------------------------------ -->
+echo "<img src='/$newimg' width='960' height='540'><br><br>"; # print image
+echo "$newimg"; # print image directory
+echo "<br>";
+echo "<br>";
 
+$this->load->helper('url');
 
-<div class="left" style="background-color:#aaa;"> <!-- - LEFT COLUMN CONTENT - -->
-<?php
-
-            $this->load->helper('url');
-
-            # Lataa codeigniterin DB-kirjaston, login asetukset ovat \application\config\database.php
-            $this->load->database();
+        # Lataa codeigniterin DB-kirjaston, login asetukset ovat \application\config\database.php
+        $this->load->database();
                 
         # Lataa codeigniterin automaattisen taulukko-muotoilun kirjastosta
 
@@ -152,88 +152,109 @@ echo "$newimg";   # 2nd newest
                 'table_open' => '<table border="1" cellpadding="2" cellspacing="1" class="mytable">'
         );
         
-        $this->table->set_template($template);        
+        $this->table->set_template($template); 
 
+$query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1');
+echo $this->table->generate($query);
+
+?>
+</div>
+</div> <!-- ------------------------------------------------------------------ -->
+
+
+<div class="left" style="background-color:#aaa;"> <!-- - LEFT COLUMN CONTENT - -->
+
+<html>
+<!-- http://172.20.240.54/images/snapshot-2019-12-05-095605-detected.jpg
+tai
+2019-12-05-095605 <- karikuva -->
+<p>Show image by timestamp. Format: yyyy-mm-dd-hhmmss</p>
+<p> (eg. 2019-12-05-095605) </p>
+<form onsubmit="location.href='http://172.20.240.54/images/' + 'snapshot-' + document.getElementById('myInput').value + '-detected.jpg'; return false;">
+  <input type="text" id="myInput" />
+  <input type="submit" />
+</form>
+<br>
+<h3>Human Detection Count by Camera & Sensors: </h3>
+</html> 
+<?php
         # Toteutetaan SQL-kyselyt ja sovitetaan arvot taulukkoon 
-         $query = $this->db->query('SELECT * FROM Tunnistus ORDER BY k_aika DESC LIMIT 15');
+         $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 15');
          echo $this->table->generate($query);
          echo '</br>';
 
-         $query = $this->db->query('SELECT * FROM Arduino1 ORDER BY a1_aika DESC LIMIT 15');
-         echo $this->table->generate($query);
-         echo '</br>';
          ?>
          </div>
 
 <div class="right" style="background-color:#aaa;"> <!-- - RIGHT COLUMN CONTENT - -->
+<html>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<h3>Sensor measures: </h3>
+</html>
+<?php
 
-        <?php
+          $query = $this->db->query('SELECT idArduino1, a1_aika as Time, a1_leveys as Width, idTunnistus as ID FROM Arduino1 ORDER BY a1_aika DESC LIMIT 15');
+          echo $this->table->generate($query);
+          echo '</br>';
+?>
+<h3>Detection count (hourly): </h3>
+<?php
+          $query2 = $this->db->query('SELECT sum(ihmiset_kpl) as Camera, sum(odotettu_kpl) as Sensors, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          echo $this->table->generate($query2);
+          echo '</br>';
 
-          $query2 = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-                  echo $this->table->generate($query2);
-                  echo '</br>';
-
-          $query = $this->db->query('SELECT * FROM Arduino2 ORDER BY a2_aika DESC LIMIT 15');
-                  echo $this->table->generate($query);
-                  echo '</br>';
+          #$query = $this->db->query('SELECT * FROM Arduino2 ORDER BY a2_aika DESC LIMIT 15');
+          #        echo $this->table->generate($query);
+          #        echo '</br>';
    
 
-$query = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-$data_points = array();
-foreach ($query->result_array() as $row)
-{
-  $point = array("label" => $row['datecreated'] , "y" => $row['ihmiset_kpl']);
-  array_push($data_points, $point);    
-}
+          $query = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          $data_points = array();
+          foreach ($query->result_array() as $row)
+          {
+            $point = array("label" => $row['datecreated'] , "y" => $row['ihmiset_kpl']);
+            array_push($data_points, $point);    
+          }
 
-$query = $this->db->query('SELECT sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-$data_points2 = array();
-foreach ($query->result_array() as $row)
-{
-  $point = array("label" => $row['datecreated'] , "y" => $row['odotettu_kpl']);
-  array_push($data_points2, $point);    
-}
-
-$row_chk = $this->db->query('SELECT COUNT(*) FROM Tunnistus');
-print_r($row_chk);
-echo "<br>";
- 
-echo "<br>";
+          $query = $this->db->query('SELECT sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          $data_points2 = array();
+          foreach ($query->result_array() as $row)
+          {
+            $point = array("label" => $row['datecreated'] , "y" => $row['odotettu_kpl']);
+            array_push($data_points2, $point);    
+          }
+          echo "<br>";
 ?>
+  <style>
+  {
+    border-collapse: collapse;
+    width: 100%;
+  }
 
-<html>
-<form action="/action_page.php">
-  Date of detection:<br>
-  <input type="text" name="firstname" value="yyyy-mm-dd"><br>
-  Time of detection:<br>
-  <input type="text" name="lastname" value="hh:mm:ss"><br><br>
-  <input type="submit" value="Submit">
-</form>
-</hmtl> 
+  td, th {
+    border: 1px solid #ddd;
+    padding: 6px;
+  }
 
-<style>
-{
-  border-collapse: collapse;
-  width: 100%;
-}
+  tr:nth-child(even){background-color: #f2f2f2;}
 
-td, th {
-  border: 1px solid #ddd;
-  padding: 6px;
-}
+  tr:hover {background-color: #ddd;}
 
-tr:nth-child(even){background-color: #f2f2f2;}
-
-tr:hover {background-color: #ddd;}
-
-th {
-  padding-top: 3px;
-  padding-bottom: 3px;
-  text-align: left;
-  background-color: #333;
-  color: white;
-}
-</style>
+  th {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    text-align: left;
+    background-color: #333;
+    color: white;
+  }
+  </style>
 </div>
 </div>
 
@@ -318,7 +339,7 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
           <br>
           
           <div class="topnav">
-            <a href="http://172.20.240.54/">All</a>
+            <a href="http://172.20.240.54/">Home</a>
             <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
             <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
           </div>
@@ -441,9 +462,6 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
                    echo $this->table->generate($query);
                    echo '</br>';
           
-                   $query = $this->db->query('SELECT * FROM Arduino1 ORDER BY a1_aika DESC');
-                   echo $this->table->generate($query);
-                   echo '</br>';
                    ?>
                    </div>
           
@@ -454,13 +472,17 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
                     $query2 = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
                             echo $this->table->generate($query2);
                             echo '</br>';
+
+                    $query = $this->db->query('SELECT * FROM Arduino1 ORDER BY a1_aika DESC');
+                            echo $this->table->generate($query);
+                            echo '</br>';
           
                     $query = $this->db->query('SELECT * FROM Arduino2 ORDER BY a2_aika DESC');
                             echo $this->table->generate($query);
                             echo '</br>';
              
           
-          $query = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          $query = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 1504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
           $data_points = array();
           foreach ($query->result_array() as $row)
           {
@@ -468,7 +490,7 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
             array_push($data_points, $point);    
           }
           
-          $query = $this->db->query('SELECT sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          $query = $this->db->query('SELECT sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 1504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
           $data_points2 = array();
           foreach ($query->result_array() as $row)
           {
@@ -506,10 +528,7 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
           
           <?php
         }
-#############################################################################################
-###################################### CHARTS ###############################################
-#############################################################################################
-        
+
 #############################################################################################
 ###################################### PICTURES ###############################################
 #############################################################################################
@@ -524,7 +543,7 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
 <br>
 
 <div class="topnav">
-  <a href="http://172.20.240.54/">All</a>
+  <a href="http://172.20.240.54/">Home</a>
   <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
   <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
 </div>
@@ -564,24 +583,9 @@ body {
 }
 </style>
 
-<p>Latest images: </p>
-<?php
-#$dir = "images/";
-#$images = glob($dir . "*.{gif,png,jpg,jpeg}", GLOB_BRACE); //formats to look for
+<div id="content" align="center">
 
-#$num_of_files = 1; //number of images to display
-
-#foreach($images as $image)
-#{
-#     $num_of_files--;
-
-#     if($num_of_files > -1)
-#       echo "<b>".$image."</b><br>Created on ".date('D, d M y H:i:s', filemtime($image))
-#        ."<br><img src='/$image' width='960' height='540'><br><br>" ; //display images
-#     else
-#       break;
-#}
-?>
+<h2>Latest image: </h2>
 
 <?php 
 $dir2 = "images/";
@@ -596,10 +600,9 @@ sort($list);                    # sort is oldest to newest,
 $newimg = array_pop($list);   # Newest
 echo "<img src='/$newimg' width='960' height='540'><br><br>";
 echo "$newimg";
+echo "<br>";
+
 ?>
-
-
-
 
  <body style="text-align:center;"> 
         
@@ -608,7 +611,22 @@ echo "$newimg";
       </h4> 
     
       <?php
+
+$this->load->database();
+$this->load->library('table');
+
+$template = array(
+           'table_open' => '<table border="1" cellpadding="2" cellspacing="1" class="mytable">'
+           );
         
+$this->table->set_template($template);      
+
+$query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1');
+  echo $this->table->generate($query);
+  echo '</br>';
+
+
+          # Take a photo-button
           if(isset($_POST['snapshot'])) {
            $command = "/usr/bin/env python3 /var/www/CodeIgniter/images/hellopython.py";  
            $message2=exec($command, $out, $status);
@@ -616,14 +634,14 @@ echo "$newimg";
             echo ", refreshing after 5 seconds";
             echo "<meta http-equiv='refresh' content='5'>";
           }
-
+          # Compress images-button
           if(isset($_POST['compress'])) { 
             echo "Compression requested: ";
             $message=shell_exec("/var/www/CodeIgniter/images/compressJpeg.sh");
             print_r($message);
           }
       ?> 
-        
+      <!-- HTML buttons -->  
       <form method="post"> 
           <input type="submit" name="snapshot"
                   value="Take a photo"/> 
@@ -634,9 +652,7 @@ echo "$newimg";
                   value="Compress uncompressed images"/> 
       </form>  
   </head> 
-
-
-
+  
   <?php
 
  ##### GALLERY #####
@@ -646,22 +662,46 @@ $dir = "images/";
 $images = glob($dir . "*.{jpg,jpeg,gif,png}", GLOB_BRACE);
 
 ?>
+</div>
 
 <html>
   <head>
     <link href="1-basic.css" rel="stylesheet">
   </head>
-  <body>
     <!-- [THE GALLERY] -->
     <div id="gallery"><?php
     foreach ($images as $i) {
-      printf("<img src='/images/%s'/>", basename($i));
+      printf("<img src='/images/%s' title='%s' />", basename($i), basename($i));
     }
     ?></div>
   </body>
 </html>
 
+
+
 <style>
+
+  {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  td, th {
+    border: 1px solid #ddd;
+    padding: 6px;
+  }
+
+  tr:nth-child(even){background-color: #f2f2f2;}
+
+  tr:hover {background-color: #ddd;}
+
+  th {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    text-align: left;
+    background-color: #333;
+    color: white;
+  }
 
 body, html {
   padding: 0;
