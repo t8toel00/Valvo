@@ -72,4 +72,4 @@ class BTConn():
             data = self.sock.recv(1024)
             return self.address, data
         except:
-            print("error")
+            print("error reading bluetooth")
