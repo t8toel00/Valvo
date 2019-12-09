@@ -22,7 +22,6 @@ class Valvo extends CI_Controller {
   <a href="http://172.20.240.54/">Home</a>
   <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
   <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
-  <a href="http://172.20.240.54/index.php/valvo/compare">Compare</a>
 </div>
 
 <style>
@@ -322,7 +321,7 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
         }
 
 ########################################################################################
-#################################### TABLES ############################################
+########################################################################################
 ########################################################################################
 
 # Subpages
@@ -340,10 +339,9 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
           <br>
           
           <div class="topnav">
-          <a href="http://172.20.240.54/">Home</a>
-          <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
-          <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
-          <a href="http://172.20.240.54/index.php/valvo/compare">Compare</a>
+            <a href="http://172.20.240.54/">Home</a>
+            <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
+            <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
           </div>
           
           <style>
@@ -532,7 +530,7 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
         }
 
 #############################################################################################
-###################################### PICTURES #############################################
+###################################### PICTURES ###############################################
 #############################################################################################
         public function pictures()
         {
@@ -548,7 +546,6 @@ var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
   <a href="http://172.20.240.54/">Home</a>
   <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
   <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
-  <a href="http://172.20.240.54/index.php/valvo/compare">Compare</a>
 </div>
 
 <style>
@@ -740,233 +737,7 @@ body, html {
   }
 }
 </style>
-<?php   ######################################################################################
-        ##################################### COMPARE ########################################
-        ######################################################################################            
+<?php                
         }
-        public function compare()
-        {
-?>       
-
-<head>
-  <title>Valvontadata</title>
-  <h1>Valvontadata</h1>
-</head>
-<br>
-
-<div class="topnav">
-  <a href="http://172.20.240.54/">Home</a>
-  <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
-  <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
-  <a href="http://172.20.240.54/index.php/valvo/compare">Compare</a>
-</div>
-<style>
-
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* Add a black background color to the top navigation */
-.topnav {
-  background-color: #333;
-  overflow: hidden;
-}
-
-/* Style the links inside the navigation bar */
-.topnav a {
-  float: left;
-  color: #f2f2f2;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-  font-size: 17px;
-}
-
-/* Change the color of links on hover */
-.topnav a:hover {
-  background-color: #ddd;
-  color: black;
-}
-
-/* Add a color to the active/current link */
-.topnav a.active {
-  background-color: #4CAF50;
-  color: white;
-}
-
-/* GRID STYLING */
-
-.grid-container {
-  display: grid;
-  grid-template-columns: auto auto;
-  background-color: white;
-  padding: 5px;
-}
-.grid-item {
-  padding: 10px;
-  font-size: 16px;
-  text-align: center;
-}
-
-/* TABLE CSS */
-
-{
-    border-collapse: collapse;
-    width: 100%;
-  }
-
-  td, th {
-    border: 1px solid #ddd;
-    padding: 6px;
-  }
-
-  tr:nth-child(even){background-color: #f2f2f2;}
-
-  tr:hover {background-color: #ddd;}
-
-  th {
-    padding-top: 3px;
-    padding-bottom: 3px;
-    text-align: left;
-    background-color: #333;
-    color: white;
-  }
-
-</style>
-
-<div class="grid-container">
-
-  <div class="grid-item"><?php # GRID 1
-$dir2 = "images/";
-$images2 = glob($dir2 . "*.{gif,png,jpg,jpeg}", GLOB_BRACE); //formats to look for
-foreach ($images2 as $f) {
-    # store the image name
-    $list[] = $f;
-}
-
-sort($list);
-
-$newimg = array_pop($list); 
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg"; ?></div>
-
-  <div class="grid-item"><?php # GRID 2
-  $this->load->database();
-
-        $this->load->library('table');
-        $template = array(
-                'table_open' => '<table border="1" cellpadding="2" cellspacing="1" class="mytable">'
-        );
-        $this->table->set_template($template); 
-
-$query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1');
-echo $this->table->generate($query);
-  ?>
-  </div>
-
-  <div class="grid-item"><?php # GRID 3
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div> 
-
-  <div class="grid-item"><?php # GRID 4
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 1');
-echo $this->table->generate($query);
-?>
-  </div>
-
-  <div class="grid-item"><?php # GRID 5
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?>
-  </div>
-
-  <div class="grid-item"><?php # GRID 6
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 2');
-echo $this->table->generate($query);
-?></div>  
-
-  <div class="grid-item"><?php # GRID 5
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div>
-
-  <div class="grid-item"><?php # GRID 6
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 3');
-echo $this->table->generate($query);
-?></div>
-
-  <div class="grid-item"><?php # GRID 7
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div>
-
-  <div class="grid-item"><?php # GRID 8
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 4');
-echo $this->table->generate($query);
-?></div>
-
-<div class="grid-item"><?php # GRID 9
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div>
-
-<div class="grid-item"><?php # GRID 10
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 5');
-echo $this->table->generate($query);
-?></div>  
-
-<div class="grid-item"><?php # GRID 11
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div>  
-
-<div class="grid-item"><?php # GRID 12
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 6');
-echo $this->table->generate($query);
-?></div>  
-
-<div class="grid-item"><?php # GRID 13
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div> 
-
-  <div class="grid-item"><?php # GRID 14
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 7');
-echo $this->table->generate($query);
-?>
-  </div>
-
-  <div class="grid-item"><?php # GRID 15
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div> 
-
-  <div class="grid-item"><?php # GRID 16
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 8');
-echo $this->table->generate($query);
-?>
-  </div>
-
-  <div class="grid-item"><?php # GRID 17
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div> 
-
-  <div class="grid-item"><?php # GRID 18
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 9');
-echo $this->table->generate($query);
-?>
-  </div>
-
-
-</div>
-
-<?php
-
-
-
-
-  }
 }
 ?>
