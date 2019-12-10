@@ -104,16 +104,16 @@ def on_BT_read_A(param1, param2):
     if endFlag == True and startFlag == True:
         # Grab frame but don't save it (to keep buffer running):
         camera1.cam.grab()
-        imageData = camera1.SnapThree() #snap three images
-        #image = imageData[1] # Image is the second element of the tuple.
-        images = imageData[1] # Image list is the second element of the tuple.
+        imageData = camera1.Snap() 
+        image = imageData[1] # Image is the second element of the tuple.
         dt = imageData[2] # Date is the third element of the tuple.
 
         # Convert received width to int:
         finalWidth = int(finalStr)
 
         # Append to queue:
-        sensorQueue.put((dt, finalWidth, images))
+        #sensorQueue.append((dt, finalStr, image))
+        sensorQueue.put((dt, finalWidth, image))
 
         btStr = ""
         finalStr = ""
@@ -129,11 +129,11 @@ def on_BT_read_B(param1,param2):
 
 
 
-#MQTT callback when a connection was established:
+#MQTT callbacks:
 def on_connect(client, userdata, flags, rc):
     print("Connected mqtt with result code " + str(rc))
 
-#MQTT callback when a message is received:
+#MQTT 
 def on_message(client, userdata, msg):
     print("Received message from mqtt: ", msg.payload)
     #detectAndSend()
@@ -163,15 +163,12 @@ def sendToServer(camData):
 
 def detectAndSend(data):
     # data is a tuple containing: (date, width, image)
-    # data is a tuple containing: (date, width, imageList)
-    # imageList is a list of three images
     # Detect people from image using CV2:
     # Returns a tuple: (faces, bodies)
     # Those include a list of tuples with coordinates:
     # ((xxx, yyy, zzz),(xxx, yyy, zzz))
-    imageLs = data[2]
-    # First use the first image...
-    camData = camera1.Detect(date = data[0], photo = imageLs[0][1])
+
+    camData = camera1.Detect(date = data[0], photo = data[2])
     print(camData)
     camFaces = len(camData[0])
     camBodies = len(camData[1])
@@ -179,11 +176,10 @@ def detectAndSend(data):
     print("Found", camFaces, " faces.")
     print("Found", camBodies, " bodies.")
 
-    
-    # Determine how many people there are according to ultrasound:
+    # Compare people count that the camera found against ultrasound sensors:
     # Average person width: 40-60 cm
     width = data[1]
-    
+
     if 75 > width > 30:
         senPeople = 1
     elif 150 > width > 80:
@@ -192,24 +188,10 @@ def detectAndSend(data):
         senPeople = 0
 
 
-    #Determine amount of people according to camera:
     if camBodies == camFaces:
         camPeople = camBodies
     else:
         camPeople = camBodies
-    # if camPeople doesn't match with senPeople, try again with a different image
-    #    that was captured after the first one.
-
-    if camPeople != senPeople:
-        print("Camera detected different amount of people, re-trying...")
-
-        # Collect data from all three images captured at trigger time:
-        camExtraData = []
-        camExtraData.append(camData)
-        camExtraData.append(camera1.Detect(date = data[0], photo = imageLs[1][1])
-        camExtraData.append(camera1.Detect(date = data[0], photo = imageLs[2][1])
-
-        # If 
 
 
     if camPeople == senPeople:

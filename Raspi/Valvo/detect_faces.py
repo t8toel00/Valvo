@@ -65,14 +65,35 @@ class cvCam():
 
     def Snap(self):
         """
-        Returns the status, image and date as a tuple.
+        Returns a list of three images taken sequentially.
         Status is true if image was captured succesfully.
         """
-
+        self.cam.grab()
         self.s, self.img = self.cam.read()
+
         self.dt = datetime.datetime.now()
         if self.s:
-            return self.s,self.img, self.dt
+            return self.s, self.img, self.dt
+
+    def SnapThree(self):
+        """
+        Returns a list of three images taken sequentially:
+        ((status,img,date))
+        Status is true if image was captured succesfully.
+        """
+        
+        self.imgList = []
+        picIndex = 0
+
+        while picIndex < 3:
+            self.cam.grab()
+            self.s, self.img = self.cam.read()
+            self.dt = datetime.datetime.now()
+            if self.s:
+                self.imgList.append ((self.s, self.img, self.dt))
+                picIndex = picIndex + 1
+        
+        return self.s, self.imgList, self.dt
 
 
     def Detect(self, date, photo):
@@ -88,7 +109,8 @@ class cvCam():
             minNeighbors=5,
             minSize=(30,30),
             )
-        
+
+        #faces are colored green:
         for (x, y, w, h) in self.faces:
             cv2.rectangle(self.img, (x, y), (x+w, y+h), (0, 255, 0), 2)
         
@@ -99,8 +121,9 @@ class cvCam():
             minSize=(30,30),
             )
         
+        #Bodies are colored red:
         for (x, y, w, h) in self.bodies:
-            cv2.rectangle(self.img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.rectangle(self.img, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
         self.filename = "snapshot-" + date.strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
         imwrite("snapshots/" + self.filename,self.img)
