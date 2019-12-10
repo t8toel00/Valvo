@@ -1,36 +1,88 @@
-const int pwPin1 = 2;
-const int pwPin2 = 3;
-long pulse1, sensor1;
-long pulse2, sensor2;
+#include <SoftwareSerial.h>
+SoftwareSerial BTSerial(10,11);
 
-void setup () {
-  Serial.begin(9600);
-  pinMode(pwPin1, INPUT);
-  pinMode(pwPin2, INPUT);
+const int pwPin = 2;
+#define trigPin 3
+#define echoPin 4
+
+float pulse1, sensor1;
+float pulse2, sensor2;
+
+float sensoryht,objekt;
+float obj1;
+float vert;
+void setup() {
+
+Serial.begin(9600);
+pinMode(pwPin, INPUT);
+pinMode(trigPin,OUTPUT);
+pinMode(echoPin,INPUT);
+BTSerial.begin(9600);
 }
 
-void read_sensor(){
-  pulse1 = pulseIn(pwPin1, HIGH);
-  pulse2 = pulseIn(pwPin2, HIGH);
-  sensor1 = pulse1/147;
-  sensor2 = pulse2/147;
+void read_sensor()
+{
+    digitalWrite(trigPin, LOW);  
+  delayMicroseconds(2); 
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+   pulse2=pulseIn(echoPin,HIGH);
+ pulse1=pulseIn(pwPin,HIGH);
+ sensor1=pulse1/147*2.54;
+ sensor2=pulse2/147*2.54;
+ sensoryht=sensor1+sensor2;
+ objekt=(23-(sensor1+sensor2));
 }
 
-//This section of code is if you want to print the range readings to your computer too remove this from the code put /* before the code section and */ after the code
-void printall(){         
-  Serial.print("S1");
-  Serial.print(" ");
-  Serial.print(sensor1);
-  Serial.println(" ");
-  Serial.print("S2");
-  Serial.print(" ");
-  Serial.print(sensor2);
-  Serial.println(" ");
-  
+void printall()
+{
+  Serial.println("\n1.Pari");
+ Serial.print("Sensor1=");
+ Serial.println(sensor1);
+  Serial.print("Sensori2=");
+   Serial.println(sensor2);
+    Serial.print("Leveys=");
+     Serial.println(objekt);
+}
+void bluetooth()
+{
+  BTSerial.write("\n[");
+  BTSerial.write(objekt);
+  BTSerial.write("]");
+}
+void vertailu()
+{
+digitalWrite(trigPin, LOW);  // Added this line
+  delayMicroseconds(2); // Added this line
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10); // Added this line
+  digitalWrite(trigPin, LOW);
+   pulse2=pulseIn(echoPin,HIGH);
+ pulse1=pulseIn(pwPin,HIGH);
+ sensor1=pulse1/147*2.54;
+ sensor2=pulse2/147*2.54;
+ sensoryht=sensor1+sensor2;
+ obj1=(23-(sensor1+sensor2));
+vert=objekt-obj1;
+abs(vert);
 }
 
-void loop () {
-  read_sensor();
-  printall();
-  delay(50); // This delay time changes by 50 for every sensor in the chain.  For 5 sensors this will be 250
+void loop()
+{
+ read_sensor();
+ printall();
+ if(objekt > 150)
+         { 
+         bluetooth();
+         vertailu();
+         if(vert > 15)
+              {
+               return 0;
+              }
+         }
+ else
+{
+delay(500);   
 }
+ }
