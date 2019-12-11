@@ -29,10 +29,10 @@ void read_sensor()
   digitalWrite(trigPin, LOW);
    pulse2=pulseIn(echoPin,HIGH);
  pulse1=pulseIn(pwPin,HIGH);
- sensor1=pulse1/147*2.54;
- sensor2=pulse2/147*2.54;
+ sensor1=pulse1*0.034/2;
+ sensor2=pulse2*0.034/2;
  sensoryht=sensor1+sensor2;
- objekt=(23-(sensor1+sensor2));
+ objekt=169-sensoryht;
 }
 
 void printall()
@@ -60,10 +60,10 @@ digitalWrite(trigPin, LOW);  // Added this line
   digitalWrite(trigPin, LOW);
    pulse2=pulseIn(echoPin,HIGH);
  pulse1=pulseIn(pwPin,HIGH);
- sensor1=pulse1/147*2.54;
- sensor2=pulse2/147*2.54;
+sensor1=pulse1*0.034/2;
+ sensor2=pulse2*0.034/2;
  sensoryht=sensor1+sensor2;
- obj1=(23-(sensor1+sensor2));
+ objekt=169-sensoryht;
 vert=objekt-obj1;
 abs(vert);
 }
@@ -72,7 +72,7 @@ void loop()
 {
  read_sensor();
  printall();
- if(objekt > 150)
+ if(objekt > 170)
          { 
          bluetooth();
          vertailu();
