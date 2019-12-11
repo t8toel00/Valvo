@@ -19,7 +19,6 @@ import threading
 from threading import *
 import queue
 from queue import *
-import urllib.request # urllib.request.urlopen(http://ssss.com/?testi=lol)
 
 # Thread class with callback:
 class BaseThread(threading.Thread):
@@ -124,9 +123,9 @@ def on_BT_read_A(param1, param2):
     else: 
         print("no endflag")
 
-# def on_BT_read_B(param1,param2):
-#     print("Received message from B: ")
-#     print("{}{}".format(param1,param2))
+def on_BT_read_B(param1,param2):
+    print("Received message from B: ")
+    print("{}{}".format(param1,param2))
 
 
 
@@ -173,20 +172,21 @@ def detectAndSend(data):
     imageLs = data[2]
     # First use the first image...
     camData = camera1.Detect(date = data[0], photo = imageLs[0][1])
-    #print(camData)
-    #print("faces: ", camData[0])
-    #print("bodies: ", camData[1])
-    #camFaces = len(camData[0])
-    #camBodies = len(camData[1])
+    # print(camData)
 
-    # print("Found", camFaces, " faces.")
-    # print("Found", camBodies, " bodies.")
+    print("faces: ", camData[0])
+    print("bodies: ", camData[1])
 
-    
-    # Determine how many people there are according to ultrasound:
+    camFaces = len(camData[0])
+    camBodies = len(camData[1])
+
+    print("Found", camFaces, " faces.")
+    print("Found", camBodies, " bodies.")
+
+    # Compare people count that the camera found against ultrasound sensors:
     # Average person width: 40-60 cm
     width = data[1]
-    
+
     if 75 > width > 30:
         senPeople = 1
     elif 150 > width > 80:
@@ -195,88 +195,16 @@ def detectAndSend(data):
         senPeople = 0
 
 
-    #Determine amount of people in camera:
-    # First go through the faces and check if they are inside body frames.
-    # If they are not, don't count them as people.
-    # Bodies without faces are people though...
-    # for (left,top,width,height) in camData[1]:
-        # faceFlag = False
-        # # Loop through all bodies detected:
-        # for (leftBody, topBody, widthBody, heightBody) in camData[0]:
-            
-        #     # If the face is completely inside this body frame, add it as a person:
-        #     if left >= leftBody and top >= topBody and (left + width) <= (leftBody + widthBody):
-        #         # If a face was inside multiple body frames, don't add it.
-        #         if faceFlag = False:
-        #             camPeople = camPeople + 1
-        #             faceFlag = True
-
-    camsPeople = []
-
-    # Loop all images and store the amount of people detected in a list:
-    for i in range(len(imageLs)):
-        camData = camera1.Detect(date = data[0], photo = imageLs[i][1])
-        inPeople = 0 
-        outPeople = 0
-        camFaces = len(camData[0])
-        camBodies = len(camData[1])
-
-        print("Found", camFaces, " faces.")
-        print(camData[0])
-        print("Found", camBodies, " bodies.")
-        print(camData[1])
-
-        # Loop all bodies:
-        for (leftBody, topBody, widthBody, heightBody) in camData[1]:
-            bodyFlag = False
-            faceFlag = False
-
-            # Loop all faces:
-            for (left,top,width,height) in camData[0]:
-                print(left, leftBody, top, topBody, (left+width), (leftBody + widthBody), (top + height), (topBody + heightBody))
-                print((left >= leftBody), (top >= topBody), ((left + width) <= (leftBody + widthBody)), ((top + height) <= (topBody + heightBody)))
-                # If the body has a face in it:
-                if left >= leftBody and top >= topBody and (left + width) <= (leftBody + widthBody) and (top + height) <= (topBody + heightBody):
-                    print("face found inside body")
-                    # If a face was not in this body yet:
-                    if faceFlag == False:
-                        # If the body was detected as outgoing before:
-                        if bodyFlag == True:
-                            outPeople = outPeople - 1
-                            inPeople = inPeople + 1
-                            bodyFlag = True
-                            faceFlag = True
-                        else:
-                            inPeople = inPeople + 1
-                            bodyFlag = True
-                            faceFlag = True
-                            # camera1.drawBox(imageLs[i][1], leftBody, topBody, widthBody, heightBody)
-
-                # If the body doesn't have a face in it this loop:
-                else:
-                    if bodyFlag == False and faceFlag == False:
-                        outPeople = outPeople + 1
-                        bodyFlag = True
-                        # camera1.drawBox(imageLs[i][1], leftBody, topBody, widthBody, heightBody)
-            # If there were no faces, just add the person as an outgoer:
-            if len(camData[0]) == 0:
-                outPeople = outPeople + 1
-
-        # Finally append the data for this image:
-        camsPeople.append((inPeople, outPeople))
-        print("In ppl: ", inPeople, ". Out ppl: ", outPeople)
-
-
-    # Combine in and outgoing people for now:
-    camPeople = camsPeople[0][0] + camsPeople[0][1]
+    if camBodies == camFaces:
+        camPeople = camBodies
+    else:
+        camPeople = camBodies
 
 
     if camPeople == senPeople:
-        people = camPeople
+        people = camBodies
     else:
         people = 0
-        print("Camera people: ", camPeople, ". Sensor people: ", senPeople)
-        print("Camera detected different amount of people!")
 
     # Return amount of people detected by sensor, by camera,
     #   the assumed direction (and number to each direction???) and date and image:
@@ -292,17 +220,11 @@ def detectAndSend(data):
         pass
 
     #Publish the data to server and print locally for debug:
-    # Include time, senPeople, inPeople, outPeople, width
     try:
         mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(data[0]) + "," + str(camPeople) + "," + str(senPeople))
     except:
         print("Error publishing to mqtt.")
         pass
-        
-
-    # Push the data to HTTP GET
-    # urllib.request.urlopen("172.20.240.54/testi/ebin.php?testi=" + str(people)
-
 
     return returnData
 
@@ -397,7 +319,7 @@ sftp = pysftp.Connection(sshAddress, username = sshUsername, password = sshPassw
 
 # Then establish bluetooth connections:
 arduinoA = createConnection("98:D3:31:B2:B8:D4") #kim-jong-il
-# arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
+arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
 #arduinoB = createConnection("98:D3:31:B2:B9:4C") #kim-jong-ung
 
 btThreadA = BaseThread(
@@ -409,19 +331,24 @@ btThreadA = BaseThread(
 
 btThreadA.loop = True
 
-# btThreadB = BaseThread(
-#     name='btB',
-#     target=arduinoB.read_from_bluetooth,
-#     #loop=True,
-#     callback=on_BT_read_B
-# )
-# btThreadB.loop = True
+btThreadB = BaseThread(
+    name='btB',
+    target=arduinoB.read_from_bluetooth,
+    #loop=True,
+    callback=on_BT_read_B
+)
+btThreadB.loop = True
 
 
 
 #Start bluetooth threads:
 btThreadA.start()
-# btThreadB.start()
+btThreadB.start()
+
+# Map file descriptors to socket objects
+fd_to_socket = { arduinoA.sock.fileno(): arduinoA.sock, arduinoB.sock.fileno(): arduinoB.sock,
+               }
+
 
 
 thrIndex = 0
@@ -439,14 +366,14 @@ while True:
         print(err)
         arduinoA = createConnection("98:D3:31:B2:B8:D4")
     
-    # try:
-    #     arduinoB.sock.getpeername()
-    # except bluetooth.btcommon.BluetoothError as err:
-    #     logfile.writelines(err)
-    #     print("Connection lost:")
-    #     print(err)
-    #     arduinoB = createConnection("98:D3:31:20:40:BB")
-    #     pass
+    try:
+        arduinoB.sock.getpeername()
+    except bluetooth.btcommon.BluetoothError as err:
+        logfile.writelines(err)
+        print("Connection lost:")
+        print(err)
+        arduinoB = createConnection("98:D3:31:20:40:BB")
+        pass
 
     #events = poller.poll(TIMEOUT)
 
@@ -474,7 +401,7 @@ while True:
 
 
 arduinoA.close()
-# arduinoB.close()
+arduinoB.close()
 
 mqtt_c1.closeMqtt()
 

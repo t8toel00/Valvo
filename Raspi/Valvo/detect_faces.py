@@ -81,12 +81,11 @@ class cvCam():
         ((status,img,date))
         Status is true if image was captured succesfully.
         """
-        
+        self.cam.grab()
         self.imgList = []
         picIndex = 0
 
         while picIndex < 3:
-            self.cam.grab()
             self.s, self.img = self.cam.read()
             self.dt = datetime.datetime.now()
             if self.s:
