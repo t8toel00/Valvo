@@ -22,7 +22,6 @@ class Valvo extends CI_Controller {
   <a href="http://172.20.240.54/">Home</a>
   <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
   <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
-  <a href="http://172.20.240.54/index.php/valvo/compare">Compare</a>
 </div>
 
 <style>
@@ -115,11 +114,6 @@ body {
   background-color: #4CAF50;
   color: white;
 }
-
-.canvasjs-chart-canvas {
-  border: 1px solid black;
-}
-
 </style>
 
 
@@ -160,7 +154,7 @@ $this->load->helper('url');
         
         $this->table->set_template($template); 
 
-$query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1');
+$query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1');
 echo $this->table->generate($query);
 
 ?>
@@ -181,10 +175,11 @@ tai
   <input type="submit" />
 </form>
 <br>
-<h3>Human Detection by Camera & Sensors: </h3>
+<h3>Human Detection Count by Camera & Sensors: </h3>
 </html> 
 <?php
-         $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 15');
+        # Toteutetaan SQL-kyselyt ja sovitetaan arvot taulukkoon 
+         $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 15');
          echo $this->table->generate($query);
          echo '</br>';
 
@@ -201,59 +196,41 @@ tai
 <br>
 <br>
 <br>
+<h3>Sensor measures: </h3>
 </html>
-<h3>Detection count sum (hourly): </h3>
 <?php
-          # first table for graph
 
-          $query = $this->db->query('SELECT sum(ihmiset_kpl) as Camera, sum(odotettu_kpl) as Sensors, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 168 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          $query = $this->db->query('SELECT idArduino1, a1_aika as Time, a1_leveys as Width, idTunnistus as ID FROM Arduino1 ORDER BY a1_aika DESC LIMIT 15');
           echo $this->table->generate($query);
           echo '</br>';
+?>
+<h3>Detection count (hourly): </h3>
+<?php
+          $query2 = $this->db->query('SELECT sum(ihmiset_kpl) as Camera, sum(odotettu_kpl) as Sensors, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          echo $this->table->generate($query2);
+          echo '</br>';
 
-          $query = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 168 HOUR AND lev != "manual" GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          #$query = $this->db->query('SELECT * FROM Arduino2 ORDER BY a2_aika DESC LIMIT 15');
+          #        echo $this->table->generate($query);
+          #        echo '</br>';
+   
+
+          $query = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
           $data_points = array();
-      
           foreach ($query->result_array() as $row)
           {
             $point = array("label" => $row['datecreated'] , "y" => $row['ihmiset_kpl']);
             array_push($data_points, $point);    
           }
 
-          $query = $this->db->query('SELECT sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 168 HOUR AND lev != "manual" GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          $query = $this->db->query('SELECT sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
           $data_points2 = array();
-       
           foreach ($query->result_array() as $row)
           {
             $point = array("label" => $row['datecreated'] , "y" => $row['odotettu_kpl']);
             array_push($data_points2, $point);    
           }
           echo "<br>";
-
-          #second table for graph
-          # sisa_lkm as Ingoing, ulos_lkm as Outgoing
-          # Aika, kamera lkm, sensori lkm, sis lkm, ulos lkm, leveys
-
-          $query = $this->db->query('SELECT sum(sisa_lkm) as Ingoing, sum(ulos_lkm) as Outgoing, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 168 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-          echo $this->table->generate($query);
-          echo '</br>';
-
-          $query = $this->db->query('SELECT sum(sisa_lkm) as Ingoing, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 168 HOUR AND lev != "manual" GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-          $data_points3 = array();
-          foreach ($query->result_array() as $row)
-          {
-            $point = array("label" => $row['datecreated'] , "y" => $row['Ingoing']);
-            array_push($data_points3, $point);    
-          }
-
-          $query = $this->db->query('SELECT sum(ulos_lkm) as Outgoing, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 168 HOUR AND lev != "manual" GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-          $data_points4 = array();
-          foreach ($query->result_array() as $row)
-          {
-            $point = array("label" => $row['datecreated'] , "y" => $row['Outgoing']);
-            array_push($data_points4, $point);    
-          }
-          echo "<br>";
-
 ?>
   <style>
   {
@@ -288,11 +265,8 @@ tai
 
 var dps = <?php echo json_encode($data_points, JSON_NUMERIC_CHECK); ?>;
 var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
-var dps3 = <?php echo json_encode($data_points3, JSON_NUMERIC_CHECK); ?>;
-var dps4 = <?php echo json_encode($data_points4, JSON_NUMERIC_CHECK); ?>;
 
  window.onload = function () {
-   // first graph
  var chart = new CanvasJS.Chart("chartContainer", {
          animationEnabled: true,
          theme: "light2",
@@ -334,58 +308,11 @@ var dps4 = <?php echo json_encode($data_points4, JSON_NUMERIC_CHECK); ?>;
          }
          chart.render();
  }
-
-  // second graph
-
-  var chart2 = new CanvasJS.Chart("chartContainer2", {
-         animationEnabled: true,
-         theme: "light2",
-         title:{
-                 text: "Direction count"
-         },
-         legend:{
-                 cursor: "pointer",
-                 verticalAlign: "center",
-                 horizontalAlign: "right",
-                 itemclick: toggleDataSeries
-         },
-         data: [{
-                 type: "area",
-                 fillOpacity: .2,
-                 name: "Ingoing",
-                 indexLabel: "{y}",
-                 yValueFormatString: "#0.##",
-                 showInLegend: true,
-                 dataPoints: dps3
-         },{
-                 type: "area",
-                 fillOpacity: .2,
-                 name: "Outgoing",
-                 indexLabel: "{y}",
-                 yValueFormatString: "#0.##",
-                 showInLegend: true,
-                 dataPoints: dps4
-         }]
- });
- chart2.render();
-  
- function toggleDataSeries(e){
-         if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-                 e.dataSeries.visible = false;
-         }
-         else{
-                 e.dataSeries.visible = true;
-         }
-         chart.render();
- }
-
-
  }
  </script>
  </head>
  <body>
  <div class="footer" id="chartContainer" style="height: 370px; width: 100%;"></div>
- <div class="footer" id="chartContainer2" style="height: 370px; width: 100%;"></div>
  <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
  </body>
  </html>                           
@@ -394,7 +321,7 @@ var dps4 = <?php echo json_encode($data_points4, JSON_NUMERIC_CHECK); ?>;
         }
 
 ########################################################################################
-#################################### TABLES ############################################
+########################################################################################
 ########################################################################################
 
 # Subpages
@@ -412,10 +339,9 @@ var dps4 = <?php echo json_encode($data_points4, JSON_NUMERIC_CHECK); ?>;
           <br>
           
           <div class="topnav">
-          <a href="http://172.20.240.54/">Home</a>
-          <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
-          <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
-          <a href="http://172.20.240.54/index.php/valvo/compare">Compare</a>
+            <a href="http://172.20.240.54/">Home</a>
+            <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
+            <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
           </div>
           
           <style>
@@ -543,13 +469,34 @@ var dps4 = <?php echo json_encode($data_points4, JSON_NUMERIC_CHECK); ?>;
           
                   <?php
           
-                    $query2 = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 50004 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+                    $query2 = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
                             echo $this->table->generate($query2);
                             echo '</br>';
 
-                            $query = $this->db->query('SELECT sum(sisa_lkm) as Ingoing, sum(ulos_lkm) as Outgoing, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 50004 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+                    $query = $this->db->query('SELECT * FROM Arduino1 ORDER BY a1_aika DESC');
                             echo $this->table->generate($query);
                             echo '</br>';
+          
+                    $query = $this->db->query('SELECT * FROM Arduino2 ORDER BY a2_aika DESC');
+                            echo $this->table->generate($query);
+                            echo '</br>';
+             
+          
+          $query = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 1504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          $data_points = array();
+          foreach ($query->result_array() as $row)
+          {
+            $point = array("label" => $row['datecreated'] , "y" => $row['ihmiset_kpl']);
+            array_push($data_points, $point);    
+          }
+          
+          $query = $this->db->query('SELECT sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 1504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          $data_points2 = array();
+          foreach ($query->result_array() as $row)
+          {
+            $point = array("label" => $row['datecreated'] , "y" => $row['odotettu_kpl']);
+            array_push($data_points2, $point);    
+          }
                  
           ?>
           
@@ -583,7 +530,7 @@ var dps4 = <?php echo json_encode($data_points4, JSON_NUMERIC_CHECK); ?>;
         }
 
 #############################################################################################
-###################################### PICTURES #############################################
+###################################### PICTURES ###############################################
 #############################################################################################
         public function pictures()
         {
@@ -599,7 +546,6 @@ var dps4 = <?php echo json_encode($data_points4, JSON_NUMERIC_CHECK); ?>;
   <a href="http://172.20.240.54/">Home</a>
   <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
   <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
-  <a href="http://172.20.240.54/index.php/valvo/compare">Compare</a>
 </div>
 
 <style>
@@ -675,7 +621,7 @@ $template = array(
         
 $this->table->set_template($template);      
 
-$query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1');
+$query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors FROM Tunnistus ORDER BY k_aika DESC LIMIT 1');
   echo $this->table->generate($query);
   echo '</br>';
 
@@ -791,233 +737,7 @@ body, html {
   }
 }
 </style>
-<?php   ######################################################################################
-        ##################################### COMPARE ########################################
-        ######################################################################################            
+<?php                
         }
-        public function compare()
-        {
-?>       
-
-<head>
-  <title>Valvontadata</title>
-  <h1>Valvontadata</h1>
-</head>
-<br>
-
-<div class="topnav">
-  <a href="http://172.20.240.54/">Home</a>
-  <a href="http://172.20.240.54/index.php/valvo/tables">Full database</a>
-  <a href="http://172.20.240.54/index.php/valvo/pictures">Pictures</a>
-  <a href="http://172.20.240.54/index.php/valvo/compare">Compare</a>
-</div>
-<style>
-
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* Add a black background color to the top navigation */
-.topnav {
-  background-color: #333;
-  overflow: hidden;
-}
-
-/* Style the links inside the navigation bar */
-.topnav a {
-  float: left;
-  color: #f2f2f2;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-  font-size: 17px;
-}
-
-/* Change the color of links on hover */
-.topnav a:hover {
-  background-color: #ddd;
-  color: black;
-}
-
-/* Add a color to the active/current link */
-.topnav a.active {
-  background-color: #4CAF50;
-  color: white;
-}
-
-/* GRID STYLING */
-
-.grid-container {
-  display: grid;
-  grid-template-columns: auto auto;
-  background-color: white;
-  padding: 5px;
-}
-.grid-item {
-  padding: 10px;
-  font-size: 16px;
-  text-align: center;
-}
-
-/* TABLE CSS */
-
-{
-    border-collapse: collapse;
-    width: 100%;
-  }
-
-  td, th {
-    border: 1px solid #ddd;
-    padding: 6px;
-  }
-
-  tr:nth-child(even){background-color: #f2f2f2;}
-
-  tr:hover {background-color: #ddd;}
-
-  th {
-    padding-top: 3px;
-    padding-bottom: 3px;
-    text-align: left;
-    background-color: #333;
-    color: white;
-  }
-
-</style>
-
-<div class="grid-container">
-
-  <div class="grid-item"><?php # GRID 1
-$dir2 = "images/";
-$images2 = glob($dir2 . "*.{gif,png,jpg,jpeg}", GLOB_BRACE); //formats to look for
-foreach ($images2 as $f) {
-    # store the image name
-    $list[] = $f;
-}
-
-sort($list);
-
-$newimg = array_pop($list); 
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg"; ?></div>
-
-  <div class="grid-item"><?php # GRID 2
-  $this->load->database();
-
-        $this->load->library('table');
-        $template = array(
-                'table_open' => '<table border="1" cellpadding="2" cellspacing="1" class="mytable">'
-        );
-        $this->table->set_template($template); 
-
-$query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1');
-echo $this->table->generate($query);
-  ?>
-  </div>
-
-  <div class="grid-item"><?php # GRID 3
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div> 
-
-  <div class="grid-item"><?php # GRID 4
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 1');
-echo $this->table->generate($query);
-?>
-  </div>
-
-  <div class="grid-item"><?php # GRID 5
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?>
-  </div>
-
-  <div class="grid-item"><?php # GRID 6
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 2');
-echo $this->table->generate($query);
-?></div>  
-
-  <div class="grid-item"><?php # GRID 5
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div>
-
-  <div class="grid-item"><?php # GRID 6
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 3');
-echo $this->table->generate($query);
-?></div>
-
-  <div class="grid-item"><?php # GRID 7
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div>
-
-  <div class="grid-item"><?php # GRID 8
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 4');
-echo $this->table->generate($query);
-?></div>
-
-<div class="grid-item"><?php # GRID 9
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div>
-
-<div class="grid-item"><?php # GRID 10
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 5');
-echo $this->table->generate($query);
-?></div>  
-
-<div class="grid-item"><?php # GRID 11
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div>  
-
-<div class="grid-item"><?php # GRID 12
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 6');
-echo $this->table->generate($query);
-?></div>  
-
-<div class="grid-item"><?php # GRID 13
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div> 
-
-  <div class="grid-item"><?php # GRID 14
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 7');
-echo $this->table->generate($query);
-?>
-  </div>
-
-  <div class="grid-item"><?php # GRID 15
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div> 
-
-  <div class="grid-item"><?php # GRID 16
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 8');
-echo $this->table->generate($query);
-?>
-  </div>
-
-  <div class="grid-item"><?php # GRID 17
-$newimg = array_pop($list);   
-echo "<img src='/$newimg' width='480' height='270'><br><br>";
-echo "$newimg";?></div> 
-
-  <div class="grid-item"><?php # GRID 18
-  $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 1 OFFSET 9');
-echo $this->table->generate($query);
-?>
-  </div>
-
-
-</div>
-
-<?php
-
-
-
-
-  }
 }
 ?>

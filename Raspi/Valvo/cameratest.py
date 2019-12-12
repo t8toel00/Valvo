@@ -1,102 +1,72 @@
 #!/usr/bin/env python3
 
-from v4l2 import *
-import fcntl
-import mmap
-import select
+import cv2
+from cv2 import *
 import time
-
-vd = open('/dev/video0', 'rb+', buffering=0)
-
-
-print(">> get device capabilities")
-cp = v4l2_capability()
-fcntl.ioctl(vd, VIDIOC_QUERYCAP, cp)
-
-print("Draiver:", "".join((chr(c) for c in cp.driver)))
-print("Name:", "".join((chr(c) for c in cp.card)))
-print("Is a video capture device?", bool(cp.capabilities & V4L2_CAP_VIDEO_CAPTURE))
-print("Supports read() call?", bool(cp.capabilities &  V4L2_CAP_READWRITE))
-print("Supports streaming?", bool(cp.capabilities & V4L2_CAP_STREAMING))
-
-print(">> device setup")
-fmt = v4l2_format()
-fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE
-fcntl.ioctl(vd, VIDIOC_G_FMT, fmt)  # get current settings
-print("width:", fmt.fmt.pix.width, "height", fmt.fmt.pix.height)
-print("pxfmt:", "V4L2_PIX_FMT_YUYV" if fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUYV else fmt.fmt.pix.pixelformat)
-print("bytesperline:", fmt.fmt.pix.bytesperline)
-print("sizeimage:", fmt.fmt.pix.sizeimage)
-fcntl.ioctl(vd, VIDIOC_S_FMT, fmt)  # set whatever default settings we got before
-
-print(">>> streamparam")  ## somewhere in here you can set the camera framerate
-parm = v4l2_streamparm()
-parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE
-parm.parm.capture.capability = V4L2_CAP_TIMEPERFRAME
-fcntl.ioctl(vd, VIDIOC_G_PARM, parm)
-fcntl.ioctl(vd, VIDIOC_S_PARM, parm)  # just got with the defaults
-
-print(">> init mmap capture")
-req = v4l2_requestbuffers()
-req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE
-req.memory = V4L2_MEMORY_MMAP
-req.count = 1  # nr of buffer frames
-fcntl.ioctl(vd, VIDIOC_REQBUFS, req)  # tell the driver that we want some buffers 
-print("req.count", req.count)
+import os
+import datetime
 
 
-buffers = []
-
-print(">>> VIDIOC_QUERYBUF, mmap, VIDIOC_QBUF")
-for ind in range(req.count):
-    # setup a buffer
-    buf = v4l2_buffer()
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE
-    buf.memory = V4L2_MEMORY_MMAP
-    buf.index = ind
-    fcntl.ioctl(vd, VIDIOC_QUERYBUF, buf)
-
-    mm = mmap.mmap(vd.fileno(), buf.length, mmap.MAP_SHARED, mmap.PROT_READ | mmap.PROT_WRITE, offset=buf.m.offset)
-    buffers.append(mm)
-
-    # queue the buffer for capture
-    fcntl.ioctl(vd, VIDIOC_QBUF, buf)
 
 
-print(">> Start streaming")
-buf_type = v4l2_buf_type(V4L2_BUF_TYPE_VIDEO_CAPTURE)
-fcntl.ioctl(vd, VIDIOC_STREAMON, buf_type)
+if not os.path.exists('snapshots'):
+    os.mkdir('snapshots')
+
+cascPath = "haarcascade_frontalface_default.xml"
+
+# Create the haar cascade
+faceCascade = cv2.CascadeClassifier(cascPath)
+
+cam = VideoCapture(0)
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
+def snapAndDetect(pic = False):
 
 
-print(">> Capture image")
-t0 = time.time()
-max_t = 1
-ready_to_read, ready_to_write, in_error = ([], [], [])
-print(">>> select")
-while len(ready_to_read) == 0 and time.time() - t0 < max_t:
-    ready_to_read, ready_to_write, in_error = select.select([vd], [], [], max_t)
+    # Snaps a picture when called and tries to detect faces.
+    # Returns the amount of faces and possibly the coordinates.
+    #s, img = cam.read()
+    if pic == False:
+        cam.grab()
+    else:
+        s, img = cam.read()
+        dt = datetime.datetime.now()
+        filename = "snapshot-" + dt.strftime('%Y-%m-%d-%H%M%S')
+        if s:
+            #imwrite("snapshots/filename.jpg",img)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            faces = faceCascade.detectMultiScale(
+                gray,
+                scaleFactor=1.1,
+                minNeighbors=5,
+                minSize=(30, 30),
+                #flags = cv2.CV_HAAR_SCALE_IMAGE
+                )
+            
+            print("Found {0} faces!".format(len(faces)))
+            for (x, y, w, h) in faces:
+                cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            imwrite("testshots/" + filename + "-detected.jpg",img)
+            #imwrite("snapshots/lastshot.jpg",img)
+        
+        # Release the video stream:
+    #cam.release()
 
-print(">>> download buffers")
-vid = open("video.yuv", "wb")
+        # Finally, return the amount of faces, timestamp and the trigger source:
+    #return faces, dt
 
-for _ in range(50):  # capture 50 frames
-    buf = v4l2_buffer()
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE
-    buf.memory = V4L2_MEMORY_MMAP
-    fcntl.ioctl(vd, VIDIOC_DQBUF, buf)  # get image from the driver queue
-    #print("buf.index", buf.index)
-    mm = buffers[buf.index]
-    # print first few pixels in gray scale part of yuvv format packed data
-    print(" ".join(("{0:08b}".format(mm[x]) for x in range(0,16,2))))
-    vid.write(mm.read())  # write the raw yuyv data from the buffer to the file
-    #vid.write(bytes((bit for i, bit in enumerate(mm.read()) if not i % 2)))  # convert yuyv to grayscale
-    mm.seek(0)
-    fcntl.ioctl(vd, VIDIOC_QBUF, buf)  # requeue the buffer
-
-print(">> Stop streaming")
-fcntl.ioctl(vd, VIDIOC_STREAMOFF, buf_type)
-vid.close()
-vd.close()
-
-print("video saved to video.yuv")
-print("play it with mpv video.yuv --demuxer=rawvideo --demuxer-rawvideo-w=640 --demuxer-rawvideo-h=480 --demuxer-rawvideo-format=YUY2")
+count = 0
+while True:
+    if count >= 10:
+        start = time.time()
+        snapAndDetect(True)
+        end = time.time()
+        count = 0
+        print("Photo taken in" + str(end-start))
+    else:
+        start = time.time()
+        snapAndDetect(False)
+        end = time.time()
+        count = count + 1 
+        print("Time elapsed:" + str(end-start))

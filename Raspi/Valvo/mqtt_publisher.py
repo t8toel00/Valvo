@@ -1,30 +1,28 @@
 #!/usr/bin/env python3
 
-import os
 import paho.mqtt.client as mqtt
-import datetime
-dt = datetime.datetime.now()
-# Add reading sensor data directly from arduino modules, then save them to a file AND send them forward!
 
-# Open a new sensor "log file" every time we open this program.
-# If the logs directory doesn't exist in the run directory, create one.
-if not os.path.exists('logs'):
-    os.mkdir('logs')
+# TO DO: Make this into a class object with class methods.
+# TO DO: Remove logfile from here and switch it into main.py
+class mqtt_conn():
 
-filename = "valvo-log-" + dt.strftime('%Y-%m-%d-%H:%M:%S')
-logfile= open("logs/" + filename, "w")
-logfile.writelines("Valvo mqtt publisher log started.")
-msg="PLACEHOLDER"
-topic = "raspberry/sensor"
 
-client = mqtt.Client()
-client.connect("172.20.240.54",1883,60)
+    def __init__(self):
+        self.client = mqtt.Client()
 
-while msg != "exit":
-    msg=input("Insert message you want to send to topic '" + topic + "': " + chr(10))
-    logfile.writelines(msg + "\n")
-    client.publish(topic, msg)
+    def connectMqtt(self, addr, port, topic, qos=0):
+        self.client.connect(addr,port,60)
+        self.client.subscribe(topic, qos)
+        self.client.loop_start()
 
-# Close the log file and disconnect from the broker:
-logfile.close
-client.disconnect();
+    def publishToMqtt(self, topic, msg, qos=0):
+        self.client.publish(topic, msg, qos)
+
+    #def subscribeToMqtt(self, topic, qos=0):
+    #    try:
+    #        self.client.subscribe(topic, qos)
+
+    # Close the log file and disconnect from the broker:
+    def closeMqtt():
+        self.client.loop_stop()
+        self.client.disconnect();

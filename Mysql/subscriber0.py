@@ -9,7 +9,9 @@ def on_connect(client, userdata, flags, rc):
   client.subscribe("topic/test")
 
 def on_message(client, userdata, msg):
-  if msg.payload.decode() == "Hello world!":
+  x = msg.payload.decode()
+  print(x)
+  if x == "quit":
     print("Yes!")
     client.disconnect()
     
