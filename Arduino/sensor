@@ -52,9 +52,13 @@ void printall()
 }
 void bluetooth()
 {
-  BTSerial.print("[");
-  BTSerial.print(objekt,DEC);
-  BTSerial.print("]");
+  if((timeLast - millis()) > 500)
+  {
+    BTSerial.print("[");
+    BTSerial.print(objekt,DEC);
+    BTSerial.print("]");
+    timeLast = millis();
+  }
 }
 void vertailu()
 {
@@ -83,23 +87,15 @@ void loop()
          vertailu();
          if(vert>50)
           {
-           if((timeLast - millis()) > 500)
-            {
-              printall();
-              Serial.println(vert);
-              bluetooth();
-              timeLast = millis();
-            }
+            printall();
+            Serial.println(vert);
+            bluetooth();  
           }
          else if(vertFlag == true)
          {
-           if((timeLast - millis()) > 500)
-            {
-              printall();
-              Serial.println(vert);
-              bluetooth();
-              timeLast = millis();
-            }
+            printall();
+            Serial.println(vert);
+            bluetooth();
          }
         }
  }
