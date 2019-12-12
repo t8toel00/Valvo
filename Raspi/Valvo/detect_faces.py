@@ -8,7 +8,6 @@ import datetime
 
 
 
-
 if not os.path.exists('snapshots'):
     os.mkdir('snapshots')
 
@@ -81,11 +80,12 @@ class cvCam():
         ((status,img,date))
         Status is true if image was captured succesfully.
         """
-        self.cam.grab()
+        
         self.imgList = []
         picIndex = 0
 
         while picIndex < 3:
+            self.cam.grab()
             self.s, self.img = self.cam.read()
             self.dt = datetime.datetime.now()
             if self.s:
@@ -98,9 +98,18 @@ class cvCam():
     def Detect(self, date, photo):
         """
         Detects faces AND upper bodies.
-        Returns face and bodies in form:
-        (faces, bodies)
+        Returns face and bodies and the image in form:
+        (faces, bodies, photo)
         """
+        try: 
+            self.faces = []
+        except:
+            pass
+        try: 
+            self.faces = []
+        except:
+            pass
+
         self.gray = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
         self.faces = self.faceCascade.detectMultiScale(
             self.gray,
@@ -111,7 +120,7 @@ class cvCam():
 
         #faces are colored green:
         for (x, y, w, h) in self.faces:
-            cv2.rectangle(self.img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.rectangle(photo, (x, y), (x+w, y+h), (0, 255, 0), 2)
         
         self.bodies = self.bodyCascade.detectMultiScale(
             self.gray,
@@ -122,56 +131,13 @@ class cvCam():
         
         #Bodies are colored red:
         for (x, y, w, h) in self.bodies:
-            cv2.rectangle(self.img, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            cv2.rectangle(photo, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
-        self.filename = "snapshot-" + date.strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
-        imwrite("snapshots/" + self.filename,self.img)
-        imwrite("snapshots/lastshot.jpg",self.img)
-
-        return self.faces, self.bodies
-
-
-
-
-
-    def detectFaces(self, date, photo):
-        """
-        Returns faceCascade
-        """
-        #self.faces = ()
-        self.gray = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
-        self.faces = self.faceCascade.detectMultiScale(
-            self.gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30,30),
-            )
-
-        #print("Found {0} faces!".format(len(self.faces)))
-        for (x, y, w, h) in self.faces:
-            cv2.rectangle(self.img, (x, y), (x+w, y+h), (0, 255, 0), 2)
-
-        self.filename = "snapshot-" + date.strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
-        imwrite("snapshots/" + self.filename,self.img)
-        imwrite("snapshots/lastshot.jpg",self.img)
-
-        return self.faces
-
-    def detectBody(self, date, photo):
-        """
-        Returns bodies
-        """
-        self.gray = cv2.cvtColor(photo, cv2.COLOR_BGR2GRAY)
-        self.bodies = self.bodyCascade.detectMultiScale(
-            self.gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30,30),
-            )
+        #self.filename = "snapshot-" + date.strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
+        #imwrite("snapshots/" + self.filename,photo)
+        # imwrite("snapshots/lastshot.jpg",photo)
         
-        for (x, y, w, h) in self.faces:
-            cv2.rectangle(self.img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        return self.faces, self.bodies, photo
 
-        self.filename = "snapshot-" + date.strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
-        imwrite("snapshots/" + self.filename,self.img)
-        imwrite("snapshots/lastshot.jpg",self.img)
+    def drawBox(self, pic, x, y, w, h):
+        cv2.rectangle(pic, (x, y), (x+w, y+h), (0, 0, 255), 2)

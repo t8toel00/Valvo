@@ -2,6 +2,7 @@
 
 # Main script for Valvo
 
+max_ = max
 import os
 import serial
 import time
@@ -20,6 +21,7 @@ from threading import *
 import queue
 from queue import *
 import urllib.request # urllib.request.urlopen(http://ssss.com/?testi=lol)
+import operator
 
 # Thread class with callback:
 class BaseThread(threading.Thread):
@@ -97,10 +99,6 @@ def on_BT_read_A(param1, param2):
                     finalStr = finalStr + c
     elif endFlag == False and startFlag == False:
         finalStr = ""
-    
-    print("paastiin tanne asti")
-    print(startFlag)
-    print(endFlag)
 
     if endFlag == True and startFlag == True:
         # Grab frame but don't save it (to keep buffer running):
@@ -136,41 +134,62 @@ def on_connect(client, userdata, flags, rc):
 
 #MQTT callback when a message is received:
 def on_message(client, userdata, msg):
+    # Grab frame but don't save it (to keep buffer running):
+    camera1.cam.grab()
+    imageData = camera1.SnapThree() #snap three images
+    #image = imageData[1] # Image is the second element of the tuple.
+    images = imageData[1] # Image list is the second element of the tuple.
+    dt = imageData[2] # Date is the third element of the tuple.
+
+    # Convert received width to int:
+    finalWidth = "manual"
+
+    # Append to queue:
+    sensorQueue.put((dt, finalWidth, images))
     print("Received message from mqtt: ", msg.payload)
-    #detectAndSend()
+    
 
 
-def sendToServer(camData):
-    # Print the number of faces and date:
-    print(camData[1], " Found ", len(facedata[0]), " persons.")
-    print("Time between trigger and finish: " + str(endTime-startTime))
-    
-    #Publish the data to server and print locally for debug:
-    try:
-        mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
-    except:
-        print("Error publishing to mqtt.")
-        pass
-    
-    print("Tunnistus," + str(facedata[1]) + "," + str(len(facedata[0])))
+def sendToServer(peopleData):
+    # peopleData = (date, img, camPeople, senPeople, inPeople, outPeople, width)
+
     try:
         #Push snapshot to server:
-        sftp.put("snapshots/lastshot.jpg", "/home/ubuntu/www/CodeIgniter/images/" + str(camera1.filename))
+        filename = "snapshot-" + peopleData[0].strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
+        sftp.put("snapshots/" + filename, "/home/ubuntu/www/CodeIgniter/images/" + filename)
     except:
         print("Error pushing file over sftp.")
+        pass
+
+    #Publish the data to server and print locally for debug:
+    # Include time, senPeople, inPeople, outPeople, width
+    try:
+        mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(peopleData[0]) + "," + str(peopleData[2]) + "," + str(peopleData[3])+ "," + str(peopleData[4]) + "," + str(peopleData[5]) + "," + str(peopleData[6]))
+    except:
+        print("Error publishing to mqtt.")
         pass
 
 
 
 def detectAndSend(data):
-    # data is a tuple containing: (date, width, image)
     # data is a tuple containing: (date, width, imageList)
-    # imageList is a list of three images
+    # imageList is a list of images taken sequentially, each item in form: (status, image).
+    # so:
+
+    # data
+    # --date [0]
+    # --width [1]
+    # --imageList [2]
+    # ----(status0, image0) [0]
+    # ----(status1, image1) [1]
+
+    imageLs = data[2]
+
     # Detect people from image using CV2:
     # Returns a tuple: (faces, bodies)
     # Those include a list of tuples with coordinates:
     # ((xxx, yyy, zzz),(xxx, yyy, zzz))
-    imageLs = data[2]
+
     # First use the first image...
     camData = camera1.Detect(date = data[0], photo = imageLs[0][1])
     #print(camData)
@@ -185,31 +204,18 @@ def detectAndSend(data):
     
     # Determine how many people there are according to ultrasound:
     # Average person width: 40-60 cm
-    width = data[1]
+    senWidth = data[1]
     
-    if 75 > width > 30:
-        senPeople = 1
-    elif 150 > width > 80:
-        senPeople = 2
-    else:
+    if senWidth == "manual":
         senPeople = 0
+    else:
+        if 75 > senWidth > 15:
+            senPeople = 1
+        elif 160 > senWidth > 80:
+            senPeople = 2
+        else:
+            senPeople = 0
 
-
-    #Determine amount of people in camera:
-    # First go through the faces and check if they are inside body frames.
-    # If they are not, don't count them as people.
-    # Bodies without faces are people though...
-    # for (left,top,width,height) in camData[1]:
-        # faceFlag = False
-        # # Loop through all bodies detected:
-        # for (leftBody, topBody, widthBody, heightBody) in camData[0]:
-            
-        #     # If the face is completely inside this body frame, add it as a person:
-        #     if left >= leftBody and top >= topBody and (left + width) <= (leftBody + widthBody):
-        #         # If a face was inside multiple body frames, don't add it.
-        #         if faceFlag = False:
-        #             camPeople = camPeople + 1
-        #             faceFlag = True
 
     camsPeople = []
 
@@ -222,9 +228,9 @@ def detectAndSend(data):
         camBodies = len(camData[1])
 
         print("Found", camFaces, " faces.")
-        print(camData[0])
+        #print(camData[0])
         print("Found", camBodies, " bodies.")
-        print(camData[1])
+        #print(camData[1])
 
         # Loop all bodies:
         for (leftBody, topBody, widthBody, heightBody) in camData[1]:
@@ -233,8 +239,8 @@ def detectAndSend(data):
 
             # Loop all faces:
             for (left,top,width,height) in camData[0]:
-                print(left, leftBody, top, topBody, (left+width), (leftBody + widthBody), (top + height), (topBody + heightBody))
-                print((left >= leftBody), (top >= topBody), ((left + width) <= (leftBody + widthBody)), ((top + height) <= (topBody + heightBody)))
+                # print(left, leftBody, top, topBody, (left+width), (leftBody + widthBody), (top + height), (topBody + heightBody))
+                # print((left >= leftBody), (top >= topBody), ((left + width) <= (leftBody + widthBody)), ((top + height) <= (topBody + heightBody)))
                 # If the body has a face in it:
                 if left >= leftBody and top >= topBody and (left + width) <= (leftBody + widthBody) and (top + height) <= (topBody + heightBody):
                     print("face found inside body")
@@ -250,64 +256,107 @@ def detectAndSend(data):
                             inPeople = inPeople + 1
                             bodyFlag = True
                             faceFlag = True
-                            # camera1.drawBox(imageLs[i][1], leftBody, topBody, widthBody, heightBody)
+                            camera1.drawBox(camData[2], leftBody, topBody, widthBody, heightBody)
 
                 # If the body doesn't have a face in it this loop:
                 else:
                     if bodyFlag == False and faceFlag == False:
                         outPeople = outPeople + 1
                         bodyFlag = True
-                        # camera1.drawBox(imageLs[i][1], leftBody, topBody, widthBody, heightBody)
+                        camera1.drawBox(camData[2], leftBody, topBody, widthBody, heightBody)
             # If there were no faces, just add the person as an outgoer:
             if len(camData[0]) == 0:
                 outPeople = outPeople + 1
 
-        # Finally append the data for this image:
-        camsPeople.append((inPeople, outPeople))
+        # Finally append the data for this image and the image as the last item:
+        camsPeople.append((inPeople, outPeople, camData[2]))
         print("In ppl: ", inPeople, ". Out ppl: ", outPeople)
 
 
     # Combine in and outgoing people for now:
     camPeople = camsPeople[0][0] + camsPeople[0][1]
 
+    # if camPeople == senPeople:
+    #     people = camPeople
+    #     rImage = imageLs[0][1]
+# else:
+    print("Camera detected different amount of people!")
 
-    if camPeople == senPeople:
-        people = camPeople
-    else:
-        people = 0
-        print("Camera people: ", camPeople, ". Sensor people: ", senPeople)
-        print("Camera detected different amount of people!")
+    # Choose the most likely correct result from all images:
+    dPeople = {}
+
+    # Cycle through all the image data,
+    #   and count how many same items there are...
+    for inP, outP, img in camsPeople:
+
+        if str(inP) + "," + str(outP) in dPeople:
+            dPeople[str(inP) + "," + str(outP)] = dPeople[str(inP) + "," + str(outP)] + 1
+        else:
+            dPeople[str(inP) + "," + str(outP)] = 1
+
+    # Now check which item of dPeople has the largest value:
+    #k = max(dPeople, key=lambda key: dPeople[key])
+    print("dPeople: ",dPeople)
+    k = max_(dPeople, key=dPeople.get)
+    #k = max(dPeople.items(), key=operator.itemgetter(1))[0]
+    klist = k.split(',')
+    inPeople = int(klist[0])
+    outPeople = int(klist[1])
+    
+    print("most popular pair (i/o): ", k)
+    print("in ppl.: ", inPeople)
+    print("out ppl.: ", outPeople)
+    people = inPeople + outPeople
+    
+    # Determine the photo we will return:
+    for x in range(len(camsPeople)):
+        if camsPeople[x][0] == inPeople and camsPeople[x][1] == outPeople:
+            rImage = camsPeople[x][2]
+    # rImage = 
+    # people = 0
+    #print("Camera people: ", camPeople, ". Sensor people: ", senPeople)
+        
 
     # Return amount of people detected by sensor, by camera,
     #   the assumed direction (and number to each direction???) and date and image:
-    # (date, img, camPeople, senPeople)
-    returnData = tuple((data[0], data[2], camPeople, senPeople, people))
+    # (date, img, camPeople, senPeople, inPeople, outPeople)
+    returnData = tuple((data[0], rImage, camPeople, senPeople, inPeople, outPeople, senWidth))
 
-    try:
-        #Push snapshot to server:
-        filename = "snapshot-" + data[0].strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
-        sftp.put("snapshots/" + filename, "/home/ubuntu/www/CodeIgniter/images/" + filename)
-    except:
-        print("Error pushing file over sftp.")
-        pass
+    # Save the image we used for detection (or any...)
+    filename = "snapshot-" + data[0].strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
+    imwrite("snapshots/" + filename, rImage)
 
-    #Publish the data to server and print locally for debug:
-    # Include time, senPeople, inPeople, outPeople, width
-    try:
-        mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(data[0]) + "," + str(camPeople) + "," + str(senPeople))
-    except:
-        print("Error publishing to mqtt.")
-        pass
-        
+    sendToServer(returnData)
+    
+    # try:
+    #     #Push snapshot to server:
+    #     filename = "snapshot-" + data[0].strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
+    #     sftp.put("snapshots/" + filename, "/home/ubuntu/www/CodeIgniter/images/" + filename)
+    # except:
+    #     print("Error pushing file over sftp.")
+    #     pass
 
-    # Push the data to HTTP GET
-    # urllib.request.urlopen("172.20.240.54/testi/ebin.php?testi=" + str(people)
+    # #Publish the data to server and print locally for debug:
+    # # Include time, senPeople, inPeople, outPeople, width
+    # try:
+    #     mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(data[0]) + "," + str(camPeople) + "," + str(senPeople)+ "," + str(inPeople) + "," + str(outPeople) + "," + str(senWidth))
+    # except:
+    #     print("Error publishing to mqtt.")
+    #     pass
 
+
+    # # HTTP DEMO:
+    # payload = "'people':5"
+    # payload = payload.encode('utf-8')
+    # # Push the data to HTTP GET
+    # urllib.request.urlopen("http://172.20.240.54/testi/dbInsert.php?people=" + str(people))
+    # #r = urllib.request.urlopen("http://172.20.240.54/testi/dbInsert.php", data=payload)
+    # #print(r)
 
     return returnData
 
 
-def handle_detect(x, y, z, a, b):
+def handle_detect(x, y, z, a, b, c, d):
     # This callback function is called when detection algorithm has been run.
     # Handle sending data here??
     print("Detect done")
@@ -397,7 +446,7 @@ sftp = pysftp.Connection(sshAddress, username = sshUsername, password = sshPassw
 
 # Then establish bluetooth connections:
 arduinoA = createConnection("98:D3:31:B2:B8:D4") #kim-jong-il
-# arduinoB = createConnection("98:D3:31:20:40:BB") #kim-jong-un
+#arduinoA = createConnection("98:D3:31:20:40:BB") #kim-jong-un
 #arduinoB = createConnection("98:D3:31:B2:B9:4C") #kim-jong-ung
 
 btThreadA = BaseThread(
@@ -434,7 +483,7 @@ while True:
     try:
         arduinoA.sock.getpeername()
     except bluetooth.btcommon.BluetoothError as err:
-        logfile.writelines(err)
+        #logfile.writelines(err)
         print("Connectiong lost:")
         print(err)
         arduinoA = createConnection("98:D3:31:B2:B8:D4")
