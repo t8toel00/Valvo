@@ -8,11 +8,15 @@ const int pwPin = 2;
 float pulse1, sensor1;
 float pulse2, sensor2;
 
-float sensoryht,objekt;
-float obj1;
-float vert;
-void setup() {
+int sensoryht,objekt;
+int obj1=0;
+int vert;
 
+bool vertFlag;
+
+unsigned long timestart=0,timenow, timeLast = millis();
+
+void setup() {
 Serial.begin(9600);
 pinMode(pwPin, INPUT);
 pinMode(trigPin,OUTPUT);
@@ -37,52 +41,65 @@ void read_sensor()
 
 void printall()
 {
-  Serial.println("\n1.Pari");
+  Serial.println("\nPari");
  Serial.print("Sensor1=");
  Serial.println(sensor1);
   Serial.print("Sensori2=");
    Serial.println(sensor2);
     Serial.print("Leveys=");
      Serial.println(objekt);
+     Serial.println(obj1);
 }
 void bluetooth()
 {
-  BTSerial.write("\n[");
-  BTSerial.write(objekt);
-  BTSerial.write("]");
+  BTSerial.print("[");
+  BTSerial.print(objekt,DEC);
+  BTSerial.print("]");
 }
 void vertailu()
 {
-digitalWrite(trigPin, LOW);  // Added this line
-  delayMicroseconds(2); // Added this line
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10); // Added this line
-  digitalWrite(trigPin, LOW);
-   pulse2=pulseIn(echoPin,HIGH);
- pulse1=pulseIn(pwPin,HIGH);
-sensor1=pulse1*0.034/2;
- sensor2=pulse2*0.034/2;
- sensoryht=sensor1+sensor2;
- objekt=169-sensoryht;
-vert=objekt-obj1;
-abs(vert);
+  vertFlag = false;
+  timenow=millis();
+  if (((timenow-timestart)>5000) || (obj1==0))
+  {
+    //Serial.print(obj1);
+    Serial.println("time diff ");
+    Serial.print(timenow-timestart);
+    timestart=millis();
+    //Serial.println("millis here");
+    obj1=objekt;
+    vertFlag = true;
+  }
+   vert=abs(obj1-objekt);
 }
+
 
 void loop()
 {
  read_sensor();
- printall();
- if(objekt > 170)
-         { 
-         bluetooth();
+
+   if(0 < objekt && objekt < 165)   
+        {
          vertailu();
-         if(vert > 15)
-              {
-               return 0;
-              }
+         if(vert>50)
+          {
+           if((timeLast - millis()) > 500)
+            {
+              printall();
+              Serial.println(vert);
+              bluetooth();
+              timeLast = millis();
+            }
+          }
+         else if(vertFlag == true)
+         {
+           if((timeLast - millis()) > 500)
+            {
+              printall();
+              Serial.println(vert);
+              bluetooth();
+              timeLast = millis();
+            }
          }
- else
-{
-delay(500);   
-}
+        }
  }
