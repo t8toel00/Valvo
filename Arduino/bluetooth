@@ -71,18 +71,18 @@ abs(vert);
 void loop()
 {
  read_sensor();
- if(objekt>150)
+ if(objekt > 150)
          {
          printall();     
          bluetooth();
          vertailu();
-         if(vert>15)
+         if(vert > 15)
               {
                return 0;
               }
          }
  else
-        {
-        return 0;   
-        }
+{
+return 0;   
+}
  }
