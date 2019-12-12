@@ -1,3 +1,30 @@
+ idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, leveys as Width 
+
+elif osoite == "Alue" and len(my_list) == 6:
+      sql = "INSERT INTO Alue (paikalla, e_meno, e_tulo, p_meno, p_tulo) VALUES (%s, %s, %s, %s, %s)"
+      val = (paikalla, e_meno, e_tulo, p_meno, p_tulo)
+      mycursor.execute(sql, val)
+      mydb.commit()
+      print(mycursor.rowcount, "Alue record inserted.")
+      x = 1
+
+if osoite == "Arduino1" and len(my_list) == 4:
+      sql = "INSERT INTO Arduino1 (a1_aika, a1_leveys, a1_etaisyys) VALUES (%s, %s, %s)"
+      val = (aika, lev, eta)
+      mycursor.execute(sql, val)
+      mydb.commit()
+      print(mycursor.rowcount, "Arduino1 record inserted.")
+      x = 1
+
+    elif osoite == "Arduino2" and len(my_list) == 4:
+      sql = "INSERT INTO Arduino2 (a2_aika, a2_leveys, a2_etaisyys) VALUES (%s, %s, %s)"
+      val = (aika, lev, eta)
+      mycursor.execute(sql, val)
+      mydb.commit()
+      print(mycursor.rowcount, "Arduino2 record inserted.")
+      x = 1
+
+
 http://172.20.240.54/images/snapshot-2019-12-05-095605-detected.jpg <- karikuva
 
 

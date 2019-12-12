@@ -179,6 +179,7 @@ tai
 <h3>Human Detection Count by Camera & Sensors: </h3>
 </html> 
 <?php
+        # Toteutetaan SQL-kyselyt ja sovitetaan arvot taulukkoon 
          $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 15');
          echo $this->table->generate($query);
          echo '</br>';
@@ -200,10 +201,10 @@ tai
 </html>
 <h3>Detection count (hourly): </h3>
 <?php
-          # first table for graph
+          # first graph
 
-          $query = $this->db->query('SELECT sum(ihmiset_kpl) as Camera, sum(odotettu_kpl) as Sensors, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-          echo $this->table->generate($query);
+          $query2 = $this->db->query('SELECT sum(ihmiset_kpl) as Camera, sum(odotettu_kpl) as Sensors, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          echo $this->table->generate($query2);
           echo '</br>';
 
           $query = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
@@ -223,30 +224,9 @@ tai
           }
           echo "<br>";
 
-          #second table for graph
-          # sisa_lkm as Ingoing, ulos_lkm as Outgoing
-          # Aika, kamera lkm, sensori lkm, sis lkm, ulos lkm, leveys
+          #second graph
 
-          $query = $this->db->query('SELECT sum(sisa_lkm) as Ingoing, sum(ulos_lkm) as Outgoing, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-          echo $this->table->generate($query);
-          echo '</br>';
-
-          $query = $this->db->query('SELECT sum(sisa_lkm) as Ingoing, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-          $data_points3 = array();
-          foreach ($query->result_array() as $row)
-          {
-            $point = array("label" => $row['datecreated'] , "y" => $row['Ingoing']);
-            array_push($data_points3, $point);    
-          }
-
-          $query = $this->db->query('SELECT sum(ulos_lkm) as Outgoing, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-          $data_points4 = array();
-          foreach ($query->result_array() as $row)
-          {
-            $point = array("label" => $row['datecreated'] , "y" => $row['Outgoing']);
-            array_push($data_points4, $point);    
-          }
-          echo "<br>";
+          
 
 ?>
   <style>
@@ -282,11 +262,8 @@ tai
 
 var dps = <?php echo json_encode($data_points, JSON_NUMERIC_CHECK); ?>;
 var dps2 = <?php echo json_encode($data_points2, JSON_NUMERIC_CHECK); ?>;
-var dps3 = <?php echo json_encode($data_points3, JSON_NUMERIC_CHECK); ?>;
-var dps4 = <?php echo json_encode($data_points4, JSON_NUMERIC_CHECK); ?>;
 
  window.onload = function () {
-   // first graph
  var chart = new CanvasJS.Chart("chartContainer", {
          animationEnabled: true,
          theme: "light2",
@@ -328,58 +305,11 @@ var dps4 = <?php echo json_encode($data_points4, JSON_NUMERIC_CHECK); ?>;
          }
          chart.render();
  }
-
-  // second graph
-
-  var chart2 = new CanvasJS.Chart("chartContainer2", {
-         animationEnabled: true,
-         theme: "light2",
-         title:{
-                 text: "Direction count"
-         },
-         legend:{
-                 cursor: "pointer",
-                 verticalAlign: "center",
-                 horizontalAlign: "right",
-                 itemclick: toggleDataSeries
-         },
-         data: [{
-                 type: "area",
-                 fillOpacity: .2,
-                 name: "Ingoing",
-                 indexLabel: "{y}",
-                 yValueFormatString: "#0.##",
-                 showInLegend: true,
-                 dataPoints: dps3
-         },{
-                 type: "area",
-                 fillOpacity: .2,
-                 name: "Outgoing",
-                 indexLabel: "{y}",
-                 yValueFormatString: "#0.##",
-                 showInLegend: true,
-                 dataPoints: dps4
-         }]
- });
- chart2.render();
-  
- function toggleDataSeries(e){
-         if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-                 e.dataSeries.visible = false;
-         }
-         else{
-                 e.dataSeries.visible = true;
-         }
-         chart.render();
- }
-
-
  }
  </script>
  </head>
  <body>
  <div class="footer" id="chartContainer" style="height: 370px; width: 100%;"></div>
- <div class="footer" id="chartContainer2" style="height: 370px; width: 100%;"></div>
  <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
  </body>
  </html>                           
@@ -537,13 +467,25 @@ var dps4 = <?php echo json_encode($data_points4, JSON_NUMERIC_CHECK); ?>;
           
                   <?php
           
-                    $query2 = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 50004 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+                    $query2 = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
                             echo $this->table->generate($query2);
                             echo '</br>';
 
-                            $query = $this->db->query('SELECT sum(sisa_lkm) as Ingoing, sum(ulos_lkm) as Outgoing, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 50004 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
-                            echo $this->table->generate($query);
-                            echo '</br>';
+          $query = $this->db->query('SELECT sum(ihmiset_kpl) as ihmiset_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 1504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          $data_points = array();
+          foreach ($query->result_array() as $row)
+          {
+            $point = array("label" => $row['datecreated'] , "y" => $row['ihmiset_kpl']);
+            array_push($data_points, $point);    
+          }
+          
+          $query = $this->db->query('SELECT sum(odotettu_kpl) as odotettu_kpl, date_format(k_aika, "%H - %d/%m/%y") as datecreated FROM Tunnistus WHERE k_aika > NOW() - INTERVAL 1504 HOUR GROUP BY date_format(k_aika, "%H - %d/%m/%y") ORDER BY min(k_aika) ASC');
+          $data_points2 = array();
+          foreach ($query->result_array() as $row)
+          {
+            $point = array("label" => $row['datecreated'] , "y" => $row['odotettu_kpl']);
+            array_push($data_points2, $point);    
+          }
                  
           ?>
           
