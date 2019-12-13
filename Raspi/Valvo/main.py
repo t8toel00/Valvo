@@ -62,9 +62,9 @@ finalStr = ""
 #Bluetooth callbacks:
 #MAKE THIS A THREAD INSTEAD??
 def on_BT_read_A(param1, param2):
-    print("Received message from A: ")
-    print(param2)
-    print("{} {}".format(param1, param2))
+    # print("Received message from A: ")
+    # print(param2)
+    # print("{} {}".format(param1, param2))
 
     global startFlag
     global endFlag
@@ -100,6 +100,7 @@ def on_BT_read_A(param1, param2):
         finalStr = ""
 
     if endFlag == True and startFlag == True:
+        print("Received from sensor: ", finalStr)
         # Grab frame but don't save it (to keep buffer running):
         camera1.cam.grab()
         imageData = camera1.SnapThree() #snap three images
@@ -109,7 +110,6 @@ def on_BT_read_A(param1, param2):
 
         # Convert received width to int:
         finalWidth = int(finalStr)
-
         # Append to queue:
         sensorQueue.put((dt, finalWidth, images))
 
@@ -118,8 +118,6 @@ def on_BT_read_A(param1, param2):
         # Reset the flags:
         startFlag = False
         endFlag = False
-    else: 
-        print("no endflag")
 
 # def on_BT_read_B(param1,param2):
 #     print("Received message from B: ")
@@ -278,7 +276,7 @@ def detectAndSend(data):
     # if camPeople == senPeople:
     #     people = camPeople
     #     rImage = imageLs[0][1]
-# else:
+    # else:
     print("Camera detected different amount of people!")
 
     # Choose the most likely correct result from all images:
@@ -295,14 +293,14 @@ def detectAndSend(data):
 
     # Now check which item of dPeople has the largest value:
     #k = max(dPeople, key=lambda key: dPeople[key])
-    print("dPeople: ",dPeople)
+    # print("dPeople: ",dPeople)
     k = max_(dPeople, key=dPeople.get)
     #k = max(dPeople.items(), key=operator.itemgetter(1))[0]
     klist = k.split(',')
     inPeople = int(klist[0])
     outPeople = int(klist[1])
     
-    print("most popular pair (i/o): ", k)
+    print("Most common values (in/out): ", k)
     print("in ppl.: ", inPeople)
     print("out ppl.: ", outPeople)
     people = inPeople + outPeople
