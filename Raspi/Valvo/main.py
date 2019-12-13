@@ -10,7 +10,6 @@ import datetime
 from mqtt_publisher import *
 from detect_faces import *
 import bluetooth
-# from testBT import *
 from BTAsync import *
 # import select
 import queue
@@ -327,22 +326,6 @@ def detectAndSend(data):
     imwrite("snapshots/" + filename, rImage)
 
     sendToServer(returnData)
-    
-    # try:
-    #     #Push snapshot to server:
-    #     filename = "snapshot-" + data[0].strftime('%Y-%m-%d-%H%M%S') + "-detected.jpg"
-    #     sftp.put("snapshots/" + filename, "/home/ubuntu/www/CodeIgniter/images/" + filename)
-    # except:
-    #     print("Error pushing file over sftp.")
-    #     pass
-
-    # #Publish the data to server and print locally for debug:
-    # # Include time, senPeople, inPeople, outPeople, width
-    # try:
-    #     mqtt_c1.publishToMqtt(topic="raspberry/camera", msg="Tunnistus," + str(data[0]) + "," + str(camPeople) + "," + str(senPeople)+ "," + str(inPeople) + "," + str(outPeople) + "," + str(senWidth))
-    # except:
-    #     print("Error publishing to mqtt.")
-    #     pass
 
 
     # # HTTP DEMO:
