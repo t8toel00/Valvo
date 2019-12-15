@@ -25,13 +25,12 @@ into a folder where you can run python scripts.
 
 
 ## Setup for Server
-The project was run by: 
+The project was run by:  
 Server -> Ubuntu 18.04.3 LTS  
 Database -> Mysql 5.7.28  
 Web page -> CodeIgniter 3.1.5  
 
-Others -> Python 3 (3.6.8)  -> pip install paho-mqtt  
-                            -> pip install mysql-connector    
+Others -> Python 3 (3.6.8)  -> pip install paho-mqtt -> pip install mysql-connector  
        -> Jpegoptim  
 
 To get a working "Take a photo"-button in the web page, copy paho-mqtt pip-files to:  
@@ -41,7 +40,7 @@ CodeIgniter/images/paho_mqtt-1.5.0.egg-info
 CodeIgniter/images/paho_mqtt-1.5.0.dist-info  
 Make sure these files have web-user execute access 775  
 
-**Important files on Server:**
+**Important files on Server:**  
 /home/ubuntu/mqtt/subscriber10.py -> Listens on detect-messages from Pi's main.py and inserts them to the database, set your DB-login here  
 (file can be found at Mysql-folder, place it in any directory you like on your server)  
 
