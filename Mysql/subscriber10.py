@@ -26,15 +26,14 @@ while z == 1:
       def on_message(client, userdata, msg):
           global x
           global y
-          if len(msg.payload.decode()) > 10: 
+          if len(msg.payload.decode()) > 20:
             y = msg.payload.decode()
             print('Msg received: ', y)
             x = 0
             client.disconnect()
           else:
             print(msg.payload.decode())
-            print("Message doesn't contain matching parameters: osoite,aika,x,x,jne")
-            print("eg. arduino1,2019-11-15 13:24:30.234,tietue,tietue")
+            print("Message is too short to be considered as a DB-entry")
 
       def closeMqtt():
           client.disconnect()
@@ -52,11 +51,10 @@ while z == 1:
     mycursor = mydb.cursor()
 
     # y.split separates y string value with given separator (in this case a comma)
-    # my_listiin tulee viestin stringin arvot (jotka oli pilkuilla eroteltu) listana
 
     my_list = y.split(",")
     print(my_list)
-    print("Checking for address ") # Jää tähän looppiin
+    print("Checking for address ") 
 
     if len(my_list) == 7:
      osoite, aika, kam_lkm, ant_lkm, sisa_lkm, ulo_lkm, leveys = my_list
@@ -64,9 +62,10 @@ while z == 1:
     if len(my_list) != 7:
      print("Unexpected message/protocol. Might be too many values or too few. Values are separated with a comma , ")
      print("osoite, aika, kamera lkm, sensori lkm, sis lkm, ulos lkm, leveys")
+     print("eg. Tunniste,2019-11-15 13:24:30.234,1,1,1,1,50")
      x = 1
 
-   # Aika, kamera lkm, sensori lkm, sis lkm, ulos lkm, leveys
+    # Aika, kamera lkm, sensori lkm, sis lkm, ulos lkm, leveys
 
     # määritetään omiin muuttujiin varmuudeksi esim:
     # osoite = my_list[4]

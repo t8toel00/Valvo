@@ -3,4 +3,4 @@
 # and place them in ./compressed directory
 # with the same modification date as original files.
 
-jpegoptim --size=75k /var/www/CodeIgniter/images/*.jpg
+jpegoptim --size=60k /var/www/CodeIgniter/images/*.jpg
