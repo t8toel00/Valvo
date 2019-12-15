@@ -59,6 +59,7 @@ Make sure these files have web-user execute access 775
 1) Install programs listed above
 2) Replace important files with downloaded ones
 3) Adjust needed settings, remember user privileges
-4) Run `python3 subscriber10.py`
+4) Set database, see Mysql folder Readme
+5) Run `python3 subscriber10.py`
 
 ## Setup for Arduino
