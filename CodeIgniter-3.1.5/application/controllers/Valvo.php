@@ -184,7 +184,7 @@ tai
 <h3>Human Detection by Camera & Sensors: </h3>
 </html> 
 <?php
-         $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 15');
+         $query = $this->db->query('SELECT idTunnistus as ID, k_aika as Time, ihmiset_kpl as Camera, odotettu_kpl as Sensors, sisa_lkm as Ingoing, ulos_lkm as Outgoing, lev as Width FROM Tunnistus ORDER BY k_aika DESC LIMIT 30');
          echo $this->table->generate($query);
          echo '</br>';
 
