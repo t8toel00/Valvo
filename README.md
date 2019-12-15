@@ -53,6 +53,7 @@ Make sure these files have web-user execute access 775
 /www/CodeIgniter/application/application/config/autoload.php  
 /www/CodeIgniter/application/application/config/config.php -> Set your base URL, you have to Find & Replace "http://172.20.240.54/" to your address in Valvo.php  
 /www/CodeIgniter/application/application/config/database.php -> Change your user & pw if needed, defaults are localhost, user: admin, pw: beijing12  
+/www/CodeIgniter/application/application/config/routes.php -> make sure default controller is set to 'valvo'  
 
 **Installation:**
 1) Install programs listed above
