@@ -63,3 +63,10 @@ Make sure these files have web-user execute access 775
 5) Run `python3 subscriber10.py`
 
 ## Setup for Arduino
+1) Download Arduino IDE
+2) Make sure you have the SoftwareSerial library installed
+3) Compile and upload sensor.ino to your arduino
+4) Connect your HC-06 RX to D11 and TX to D10
+5) Connect your MaxSonar MB1000 pw pin to D2 and on the HC-SR04 the trig pin to D3 and the echo pin to D4
+6) Set the sensors perpendicular to each other about 170 cm away from each other.
+7) Apply power to everything and you're good to go!
